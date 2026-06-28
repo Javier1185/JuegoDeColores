@@ -18,8 +18,8 @@ export const ANIMALS_LIST = [
     image: require('../../assets/images/animals/vaca.png'),
   },
   {
-    id: 'pollo',
-    name: 'pollo',
+    id: 'pato',
+    name: 'pato',
     colorId: 'amarillo',
     image: require('../../assets/images/animals/pato.png'),
   },
@@ -32,8 +32,8 @@ export const ANIMALS_LIST = [
   {
     id: 'gallina',
     name: 'gallina',
-    colorId: 'rojo',
-    image: require('../../assets/images/animals/ganllina.png'),
+    colorId: 'naranja',
+    image: require('../../assets/images/animals/gallina.png'),
   },
 ];
 
