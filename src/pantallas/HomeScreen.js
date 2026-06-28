@@ -68,14 +68,15 @@ const styles = StyleSheet.create({
     // la imagen de ScreenBackground que está detrás.
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 4,
   },
   logo: {
   width: '80%',
-  height: 700,
+  height: 320,
   resizeMode: 'contain',
   alignSelf: 'center',
-  marginBottom: 40,
+  marginBottom: 24,
+  transform: [{ scale: 1.8 }]
 },
   button: {
     width: '80%',
