@@ -15,25 +15,25 @@ export const ANIMALS_LIST = [
     id: 'vaca',
     name: 'vaca',
     colorId: 'azul',
-    image: require('../../assets/images/animals/cow-blue.png'),
+    image: require('../../assets/images/animals/vaca.png'),
   },
   {
     id: 'pollo',
     name: 'pollo',
     colorId: 'amarillo',
-    image: require('../../assets/images/animals/chicken-yellow.png'),
+    image: require('../../assets/images/animals/pato.png'),
   },
   {
     id: 'rana',
     name: 'rana',
     colorId: 'verde',
-    image: require('../../assets/images/animals/frog-green.png'),
+    image: require('../../assets/images/animals/rana.png'),
   },
   {
     id: 'gallina',
     name: 'gallina',
     colorId: 'rojo',
-    image: require('../../assets/images/animals/hen-red.png'),
+    image: require('../../assets/images/animals/ganllina.png'),
   },
 ];
 
