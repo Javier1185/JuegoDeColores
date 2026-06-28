@@ -71,10 +71,11 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   logo: {
-  width: '100%',
-  height: 220,
+  width: '80%',
+  height: 500,
   resizeMode: 'contain',
-  marginBottom: 24,
+  alignSelf: 'center',
+  marginBottom: 40,
 },
   button: {
     width: '80%',
