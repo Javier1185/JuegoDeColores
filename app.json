@@ -4,7 +4,7 @@
     "slug": "la-granja-de-los-colores",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo/game-logo.png",
+    "icon": "./assets/images/logo/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/backgrounds/splash-background.png",
@@ -20,13 +20,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo/game-logo.png",
+        "foregroundImage": "./assets/images/logo/logo.png",
         "backgroundColor": "#7EC8E3"
       },
       "package": "com.tuempresa.lagranjadeloscolores"
     },
     "web": {
-      "favicon": "./assets/images/logo/game-logo.png"
+      "favicon": "./assets/images/logo/logo.png"
     }
   }
 }
