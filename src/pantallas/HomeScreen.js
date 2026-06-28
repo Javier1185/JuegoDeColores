@@ -72,10 +72,10 @@ const styles = StyleSheet.create({
   },
   logo: {
   width: '80%',
-  height: 500,
+  height: 320,
   resizeMode: 'contain',
-  alignSelf: 'center',
-  marginBottom: 40,
+  marginBottom: 24,
+   transform: [{ scale: 1.8 }],
 },
   button: {
     width: '80%',
