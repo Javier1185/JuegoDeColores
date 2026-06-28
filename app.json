@@ -1,29 +1,32 @@
 {
   "expo": {
-    "name": "JuegoColoresAnimales",
-    "slug": "JuegoColoresAnimales",
+    "name": "La Granja de los Colores",
+    "slug": "la-granja-de-los-colores",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo/game-logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/images/backgrounds/splash-background.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#7EC8E3"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tuempresa.lagranjadeloscolores"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/logo/game-logo.png",
+        "backgroundColor": "#7EC8E3"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.tuempresa.lagranjadeloscolores"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/logo/game-logo.png"
     }
   }
 }
