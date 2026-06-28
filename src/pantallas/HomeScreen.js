@@ -20,7 +20,7 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/images/logo/game-logo.png')}
+        source={require('../../assets/images/logo/logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />
