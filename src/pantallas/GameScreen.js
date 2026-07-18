@@ -1,8 +1,16 @@
 /**
  * GameScreen.js
  * -----------------------------------------------------------------------
- * Pantalla principal del juego: muestra los animales, el color pedido,
- * y valida si el niño toca el animal correcto.
+ * Pantalla principal del juego.
+ *
+ * Cambios respecto a la versión anterior:
+ *  - Usa data/niveles.js para seleccionar los 4 animales del nivel con
+ *    distribución real de dificultad (2 fácil + 1 medio + 1 difícil).
+ *  - Las estrellas se acumulan correctamente entre niveles: llegan via
+ *    route.params.stars y se pasan al siguiente nivel al avanzar.
+ *  - Animación de "rebote" en el animal correcto al tocarlo.
+ *  - Animación de "sacudida" en el animal incorrecto al tocarlo.
+ *  - Animación de "presión" (scale) en el botón de altavoz y el de casa.
  * -----------------------------------------------------------------------
  */
 
@@ -10,6 +18,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
+  Animated,
   TouchableOpacity,
   Image,
   StyleSheet,
@@ -20,35 +29,164 @@ import { Audio } from 'expo-av';
 
 import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
-import ANIMALS_LIST from '../constantes/animales';
+import { getAnimalById } from '../constantes/animales';
 import { getColorById } from '../constantes/colores';
 import { EFFECTS } from '../constantes/configuracionAudio';
+import { generarNivel, TOTAL_NIVELES } from '../data/niveles';
 import ScreenBackground from '../components/common/ScreenBackground';
 
-const TOTAL_LEVELS = 3;
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const GRID_HORIZONTAL_PADDING = 16 * 2;
 const GRID_GAP = 16;
-const COLUMNS = 2;
 const MAX_CARD_SIZE = 170;
+const CARD_SIZE = Math.min(
+  (SCREEN_WIDTH - 32 - GRID_GAP) / 2,
+  MAX_CARD_SIZE
+);
 
-const availableWidth = SCREEN_WIDTH - GRID_HORIZONTAL_PADDING - GRID_GAP;
-const calculatedCardSize = availableWidth / COLUMNS;
-const CARD_SIZE = Math.min(calculatedCardSize, MAX_CARD_SIZE);
+// -----------------------------------------------------------------
+// Componente interno: tarjeta de animal con animaciones
+// -----------------------------------------------------------------
+function AnimalCard({ animal, onPress, feedbackState }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
 
+  // Rebote cuando acierta
+  useEffect(() => {
+    if (feedbackState === 'correct') {
+      Animated.sequence([
+        Animated.spring(scaleAnim, {
+          toValue: 1.18,
+          useNativeDriver: true,
+          speed: 20,
+          bounciness: 12,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          speed: 20,
+          bounciness: 8,
+        }),
+      ]).start();
+    }
+  }, [feedbackState, scaleAnim]);
+
+  // Sacudida cuando falla
+  useEffect(() => {
+    if (feedbackState === 'wrong') {
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -7, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 7, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [feedbackState, shakeAnim]);
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.93,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 8,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={() => onPress(animal)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={0.85}
+    >
+      <Animated.View
+        style={[
+          styles.animalCard,
+          {
+            transform: [
+              { scale: scaleAnim },
+              { translateX: shakeAnim },
+            ],
+          },
+        ]}
+      >
+        <Image
+          source={animal.image}
+          style={styles.animalImage}
+          resizeMode="contain"
+        />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// -----------------------------------------------------------------
+// Componente interno: botón con animación de presión
+// -----------------------------------------------------------------
+function AnimatedButton({ onPress, children, style }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 8,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={0.85}
+    >
+      <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// -----------------------------------------------------------------
+// Pantalla principal
+// -----------------------------------------------------------------
 export default function GameScreen({ route, navigation }) {
   const level = route.params?.level ?? 1;
+  // Las estrellas viajan entre niveles via params para acumularse
+  const initialStars = route.params?.stars ?? 0;
 
-  const [targetColorId] = useState(
-    ANIMALS_LIST[Math.floor(Math.random() * ANIMALS_LIST.length)].colorId
-  );
+  // Generamos los animales del nivel UNA sola vez (no en cada render)
+  const nivelData = useRef(generarNivel(level)).current;
+  const animalesDelNivel = nivelData.animalesIds
+    .map((id) => getAnimalById(id))
+    .filter(Boolean); // filtramos por si algún id no existe en animales.js
 
-  const [stars, setStars] = useState(12);
-  const [feedback, setFeedback] = useState(null);
+  const animalObjetivo = getAnimalById(nivelData.targetAnimalId);
+  const colorObjetivo = getColorById(animalObjetivo?.colorId);
 
-  const targetColor = getColorById(targetColorId);
+  const [stars, setStars] = useState(initialStars);
+  const [feedback, setFeedback] = useState(null);      // 'correct' | 'wrong' | null
+  const [pressedId, setPressedId] = useState(null);    // id del animal tocado
 
   const soundRef = useRef(null);
 
@@ -58,114 +196,126 @@ export default function GameScreen({ route, navigation }) {
         await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
-
       const { sound } = await Audio.Sound.createAsync(soundAsset);
-
       soundRef.current = sound;
-
       await sound.playAsync();
     } catch (error) {
       console.warn('Error reproduciendo audio:', error);
     }
   }, []);
 
+  // Reproduce el audio del color al entrar al nivel
   useEffect(() => {
-    playSound(targetColor.audio);
-
+    if (colorObjetivo?.audio) {
+      playSound(colorObjetivo.audio);
+    }
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
-      }
+      soundRef.current?.unloadAsync();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReplayAudio = () => {
-    playSound(targetColor.audio);
+    if (colorObjetivo?.audio) playSound(colorObjetivo.audio);
   };
 
   const handleAnimalPress = (animal) => {
-    if (animal.colorId === targetColorId) {
+    if (feedback) return; // evitar doble toque mientras hay feedback activo
+
+    setPressedId(animal.id);
+
+    if (animal.id === animalObjetivo?.id) {
+      const newStars = stars + 1;
+      setStars(newStars);
       setFeedback('correct');
       playSound(EFFECTS.correct);
-      setStars((prev) => prev + 1);
 
       setTimeout(() => {
         navigation.navigate(SCREENS.LEVEL_COMPLETE, {
           level,
-          isLastLevel: level >= TOTAL_LEVELS,
+          stars: newStars,           // pasamos las estrellas acumuladas
+          isLastLevel: level >= TOTAL_NIVELES,
         });
       }, 1000);
     } else {
       setFeedback('wrong');
       playSound(EFFECTS.wrong);
-
       setTimeout(() => {
         setFeedback(null);
+        setPressedId(null);
       }, 1000);
     }
   };
 
+  if (!colorObjetivo || !animalObjetivo) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>Error cargando nivel. Vuelve al inicio.</Text>
+      </View>
+    );
+  }
+
   return (
-    // NOTA: usando home-background.jpeg como fondo temporal. Cuando
-    // tengas el fondo de granja final, solo cambia este require por
-    // ej. require('../../assets/images/backgrounds/farm-background.png')
     <ScreenBackground
       source={require('../../assets/images/backgrounds/home-background.jpeg')}
     >
       <View style={styles.container}>
         {/* Encabezado */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.navigate(SCREENS.HOME)}>
+          <AnimatedButton
+            onPress={() => navigation.navigate(SCREENS.HOME)}
+            style={styles.iconButton}
+          >
             <Text style={styles.headerIcon}>🏠</Text>
-          </TouchableOpacity>
+          </AnimatedButton>
 
           <Text style={styles.levelText}>Nivel {level}</Text>
 
-          <Text style={styles.starsText}>⭐ {stars}</Text>
+          <View style={styles.starsContainer}>
+            <Text style={styles.starsText}>⭐ {stars}</Text>
+          </View>
         </View>
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Banner */}
+          {/* Banner del color pedido */}
           <View style={styles.promptBanner}>
-            <TouchableOpacity onPress={handleReplayAudio} style={styles.speakerButton}>
+            <AnimatedButton
+              onPress={handleReplayAudio}
+              style={styles.speakerButton}
+            >
               <Text style={styles.speakerIcon}>🔊</Text>
-            </TouchableOpacity>
+            </AnimatedButton>
 
             <Text style={styles.promptText}>
               Toca el animal{' '}
-              <Text style={{ color: targetColor.hex }}>{targetColor.label}</Text>
+              <Text style={{ color: colorObjetivo.hex }}>
+                {colorObjetivo.label}
+              </Text>
             </Text>
           </View>
 
-          {/* Animales */}
+          {/* Grid de animales */}
           <View style={styles.animalsGrid}>
-            {ANIMALS_LIST.map((animal) => (
-              <TouchableOpacity
+            {animalesDelNivel.map((animal) => (
+              <AnimalCard
                 key={animal.id}
-                style={styles.animalCard}
-                activeOpacity={0.8}
-                onPress={() => handleAnimalPress(animal)}
-              >
-                <Image
-                  source={animal.image}
-                  style={styles.animalImage}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
+                animal={animal}
+                onPress={handleAnimalPress}
+                feedbackState={pressedId === animal.id ? feedback : null}
+              />
             ))}
           </View>
         </ScrollView>
 
+        {/* Feedback */}
         {feedback === 'correct' && (
           <View style={[styles.feedbackBanner, { backgroundColor: PALETTE.success }]}>
             <Text style={styles.feedbackText}>¡Correcto! 🎉</Text>
           </View>
         )}
-
         {feedback === 'wrong' && (
           <View style={[styles.feedbackBanner, { backgroundColor: PALETTE.error }]}>
             <Text style={styles.feedbackText}>¡Intenta de nuevo! 💪</Text>
@@ -181,6 +331,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 50,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -188,13 +343,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16,
   },
+  iconButton: {
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   headerIcon: {
-    fontSize: 28,
+    fontSize: 24,
   },
   levelText: {
     fontSize: FONT_SIZES.body,
     fontWeight: '700',
     color: PALETTE.textDark,
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  starsContainer: {
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
   starsText: {
     fontSize: FONT_SIZES.body,
@@ -219,15 +402,27 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   speakerButton: {
+    backgroundColor: PALETTE.skyBlue,
+    borderRadius: 22,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   speakerIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   promptText: {
     fontSize: FONT_SIZES.subtitle,
     fontWeight: '700',
     color: PALETTE.textDark,
+    flex: 1,
   },
   animalsGrid: {
     flexDirection: 'row',
