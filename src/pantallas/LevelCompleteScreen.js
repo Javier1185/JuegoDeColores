@@ -70,7 +70,7 @@ export default function LevelCompleteScreen({ route, navigation }) {
 
         <TouchableOpacity style={styles.button} onPress={handleContinue}>
           <Text style={styles.buttonText}>
-            {isLastLevel ? 'Ver resultado final' : 'Siguiente Nivel →'}
+            {isLastLevel ? 'Ver resultado final' : 'Siguiente Nivel'}
           </Text>
         </TouchableOpacity>
       </Animated.View>
