@@ -32,8 +32,33 @@ export const ANIMALS_LIST = [
   {
     id: 'gallina',
     name: 'gallina',
-    colorId: 'naranja',
+    colorId: 'rojo',
     image: require('../../assets/images/animals/gallina.png'),
+  },
+
+   {
+    id: 'cerdo',
+    name: 'cerdo',
+    colorId: 'rosado',
+    image: require('../../assets/images/animals/cerdo.png'),
+  },
+  {
+    id: 'perro',
+    name: 'perro',
+    colorId: 'gris',
+    image: require('../../assets/images/animals/perro.png'),
+  },
+  {
+    id: 'ardilla',
+    name: 'ardilla',
+    colorId: 'marron',
+    image: require('../../assets/images/animals/ardilla.png'),
+  },
+  {
+    id: 'girafa',
+    name: 'girafa',
+    colorId: 'amarillo',
+    image: require('../../assets/images/animals/girafa.png'),
   },
 ];
 
