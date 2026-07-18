@@ -55,10 +55,10 @@ export const ANIMALS_LIST = [
     image: require('../../assets/images/animals/ardilla.png'),
   },
   {
-    id: 'girafa',
-    name: 'girafa',
+    id: 'jirafa',
+    name: 'jirafa',
     colorId: 'amarillo',
-    image: require('../../assets/images/animals/girafa.png'),
+    image: require('../../assets/images/animals/jirafa.png'),
   },
 ];
 
