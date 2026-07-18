@@ -77,6 +77,7 @@ export default function GameScreen({ route, navigation }) {
         soundRef.current.unloadAsync();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReplayAudio = () => {
@@ -106,115 +107,80 @@ export default function GameScreen({ route, navigation }) {
   };
 
   return (
+    // NOTA: usando home-background.jpeg como fondo temporal. Cuando
+    // tengas el fondo de granja final, solo cambia este require por
+    // ej. require('../../assets/images/backgrounds/farm-background.png')
     <ScreenBackground
       source={require('../../assets/images/backgrounds/home-background.jpeg')}
     >
       <View style={styles.container}>
-
         {/* Encabezado */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.navigate(SCREENS.HOME)}>
             <Text style={styles.headerIcon}>🏠</Text>
           </TouchableOpacity>
 
-          <Text style={styles.levelText}>
-            Nivel {level}
-          </Text>
+          <Text style={styles.levelText}>Nivel {level}</Text>
 
-          <Text style={styles.starsText}>
-            ⭐ {stars}
-          </Text>
+          <Text style={styles.starsText}>⭐ {stars}</Text>
         </View>
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-
           {/* Banner */}
           <View style={styles.promptBanner}>
-
-            <TouchableOpacity
-              onPress={handleReplayAudio}
-              style={styles.speakerButton}
-            >
+            <TouchableOpacity onPress={handleReplayAudio} style={styles.speakerButton}>
               <Text style={styles.speakerIcon}>🔊</Text>
             </TouchableOpacity>
 
             <Text style={styles.promptText}>
               Toca el animal{' '}
-              <Text style={{ color: targetColor.hex }}>
-                {targetColor.label}
-              </Text>
+              <Text style={{ color: targetColor.hex }}>{targetColor.label}</Text>
             </Text>
-
           </View>
 
           {/* Animales */}
-
           <View style={styles.animalsGrid}>
-
             {ANIMALS_LIST.map((animal) => (
-
               <TouchableOpacity
                 key={animal.id}
                 style={styles.animalCard}
                 activeOpacity={0.8}
                 onPress={() => handleAnimalPress(animal)}
               >
-
                 <Image
                   source={animal.image}
                   style={styles.animalImage}
                   resizeMode="contain"
                 />
-
               </TouchableOpacity>
-
             ))}
-
           </View>
-
         </ScrollView>
 
         {feedback === 'correct' && (
-          <View
-            style={[
-              styles.feedbackBanner,
-              { backgroundColor: PALETTE.success },
-            ]}
-          >
-            <Text style={styles.feedbackText}>
-              ¡Correcto! 🎉
-            </Text>
+          <View style={[styles.feedbackBanner, { backgroundColor: PALETTE.success }]}>
+            <Text style={styles.feedbackText}>¡Correcto! 🎉</Text>
           </View>
         )}
 
         {feedback === 'wrong' && (
-          <View
-            style={[
-              styles.feedbackBanner,
-              { backgroundColor: PALETTE.error },
-            ]}
-          >
-            <Text style={styles.feedbackText}>
-              ¡Intenta de nuevo! 💪
-            </Text>
+          <View style={[styles.feedbackBanner, { backgroundColor: PALETTE.error }]}>
+            <Text style={styles.feedbackText}>¡Intenta de nuevo! 💪</Text>
           </View>
         )}
-
       </View>
     </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     paddingTop: 50,
   },
-
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -222,28 +188,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16,
   },
-
   headerIcon: {
     fontSize: 28,
   },
-
   levelText: {
     fontSize: FONT_SIZES.body,
     fontWeight: '700',
     color: PALETTE.textDark,
   },
-
   starsText: {
     fontSize: FONT_SIZES.body,
     fontWeight: '700',
     color: PALETTE.woodBrownDark,
   },
-
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
   },
-
   promptBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -252,36 +213,28 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
   },
-
   speakerButton: {
     marginRight: 12,
   },
-
   speakerIcon: {
     fontSize: 24,
   },
-
   promptText: {
     fontSize: FONT_SIZES.subtitle,
     fontWeight: '700',
     color: PALETTE.textDark,
   },
-
   animalsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: GRID_GAP,
   },
-
   animalCard: {
     width: CARD_SIZE,
     height: CARD_SIZE,
@@ -289,22 +242,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
   },
-
   animalImage: {
     width: '75%',
     height: '75%',
   },
-
   feedbackBanner: {
     position: 'absolute',
     bottom: 24,
@@ -314,11 +261,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
   },
-
   feedbackText: {
     color: PALETTE.textLight,
     fontSize: FONT_SIZES.subtitle,
     fontWeight: '700',
   },
-
 });

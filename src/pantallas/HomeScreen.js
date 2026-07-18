@@ -1,12 +1,11 @@
 /**
  * HomeScreen.js
  * -----------------------------------------------------------------------
- * Pantalla de inicio: título del juego y botones grandes para navegar
+ * Pantalla de inicio: logo del juego y botones grandes para navegar
  * a Jugar, Cómo jugar, Créditos y Configuración.
  *
- * NOTA: versión funcional básica para probar la navegación. En el paso
- * de "pantallas" se reemplazará por el diseño final usando BigButton,
- * ScreenBackground y FarmerMascot.
+ * Usa ScreenBackground para mostrar la imagen de fondo de granja/cielo
+ * en vez de un color sólido.
  * -----------------------------------------------------------------------
  */
 
@@ -17,7 +16,6 @@ import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
 import ScreenBackground from '../components/common/ScreenBackground';
 
-
 export default function HomeScreen({ navigation }) {
   return (
     <ScreenBackground source={require('../../assets/images/backgrounds/home-background.jpeg')}>
@@ -27,28 +25,28 @@ export default function HomeScreen({ navigation }) {
           style={styles.logo}
           resizeMode="contain"
         />
- 
+
         <TouchableOpacity
           style={[styles.button, { backgroundColor: PALETTE.success }]}
           onPress={() => navigation.navigate(SCREENS.GAME, { level: 1 })}
         >
           <Text style={styles.buttonText}>Jugar</Text>
         </TouchableOpacity>
- 
+
         <TouchableOpacity
           style={[styles.button, { backgroundColor: PALETTE.woodBrown }]}
           onPress={() => navigation.navigate(SCREENS.HOW_TO_PLAY)}
         >
           <Text style={styles.buttonText}>Cómo jugar</Text>
         </TouchableOpacity>
- 
+
         <TouchableOpacity
           style={[styles.button, { backgroundColor: PALETTE.woodBrown }]}
           onPress={() => navigation.navigate(SCREENS.CREDITS)}
         >
           <Text style={styles.buttonText}>Créditos</Text>
         </TouchableOpacity>
- 
+
         <TouchableOpacity
           style={[styles.button, { backgroundColor: PALETTE.woodBrownDark }]}
           onPress={() => navigation.navigate(SCREENS.SETTINGS)}
@@ -59,7 +57,7 @@ export default function HomeScreen({ navigation }) {
     </ScreenBackground>
   );
 }
- 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -71,13 +69,13 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   logo: {
-  width: '80%',
-  height: 320,
-  resizeMode: 'contain',
-  alignSelf: 'center',
-  marginBottom: 24,
-  transform: [{ scale: 1.8 }]
-},
+    width: '80%',
+    height: 320,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 24,
+    transform: [{ scale: 1.8 }],
+  },
   button: {
     width: '80%',
     paddingVertical: 18,

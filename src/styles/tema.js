@@ -37,12 +37,20 @@ export const GAME_COLORS = {
   amarillo: '#F1C40F',
 };
 
-// Tipografía: usar una fuente redondeada e infantil (ej. Baloo2 o Fredoka)
-// Los archivos .ttf reales se cargan en App.js vía expo-font.
+// Tipografía: "Baloo 2" es una fuente VARIABLE (un solo archivo cubre
+// todos los pesos). El peso se controla con "fontWeight" en los estilos,
+// no con nombres de familia distintos.
 export const FONTS = {
-  heading: 'Baloo2-Bold',
-  body: 'Baloo2-Regular',
+  family: 'Baloo2',
   fallback: 'System',
+};
+
+export const FONT_WEIGHTS = {
+  regular: '400',
+  medium: '500',
+  semiBold: '600',
+  bold: '700',
+  extraBold: '800',
 };
 
 export const FONT_SIZES = {
@@ -90,6 +98,7 @@ export default {
   PALETTE,
   GAME_COLORS,
   FONTS,
+  FONT_WEIGHTS,
   FONT_SIZES,
   SPACING,
   RADIUS,

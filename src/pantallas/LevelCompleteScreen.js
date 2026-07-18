@@ -1,13 +1,10 @@
 /**
  * LevelCompleteScreen.js
  * -----------------------------------------------------------------------
- * Pantalla de felicitación al completar un nivel, inspirada en la
- * sección "ACIERTO - FELICITACIÓN" de la imagen de referencia:
- * fondo oscurecido, 3 estrellas grandes, mensaje "¡Excelente!" y
- * botón para continuar.
- *
- * NOTA: versión funcional básica. En el paso de "animaciones" las
- * estrellas se animarán en secuencia con react-native-reanimated.
+ * Pantalla de felicitación al completar un nivel: fondo oscurecido,
+ * 3 estrellas animadas en secuencia, mensaje "¡Excelente!" y botón
+ * para continuar al siguiente nivel (o ver el resultado final si era
+ * el último nivel).
  * -----------------------------------------------------------------------
  */
 
@@ -16,6 +13,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
+import StarsAnimated from '../components/feedback/StarsAnimated';
 
 export default function LevelCompleteScreen({ route, navigation }) {
   const { level, isLastLevel } = route.params ?? { level: 1, isLastLevel: false };
@@ -31,7 +29,8 @@ export default function LevelCompleteScreen({ route, navigation }) {
   return (
     <View style={styles.overlay}>
       <View style={styles.card}>
-        <Text style={styles.stars}>⭐ ⭐ ⭐</Text>
+        <StarsAnimated earnedCount={3} size={48} />
+
         <Text style={styles.title}>¡Excelente!</Text>
         <Text style={styles.subtitle}>Nivel {level} completado</Text>
 
@@ -58,10 +57,6 @@ const styles = StyleSheet.create({
     padding: 32,
     width: '85%',
     alignItems: 'center',
-  },
-  stars: {
-    fontSize: 40,
-    marginBottom: 16,
   },
   title: {
     fontSize: FONT_SIZES.title,
