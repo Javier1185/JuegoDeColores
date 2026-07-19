@@ -1,17 +1,5 @@
 /**
  * GameScreen.js
- * -----------------------------------------------------------------------
- * Pantalla principal del juego.
- *
- * Cambios respecto a la versión anterior:
- *  - Usa data/niveles.js para seleccionar los 4 animales del nivel con
- *    distribución real de dificultad (2 fácil + 1 medio + 1 difícil).
- *  - Las estrellas se acumulan correctamente entre niveles: llegan via
- *    route.params.stars y se pasan al siguiente nivel al avanzar.
- *  - Animación de "rebote" en el animal correcto al tocarlo.
- *  - Animación de "sacudida" en el animal incorrecto al tocarlo.
- *  - Animación de "presión" (scale) en el botón de altavoz y el de casa.
- * -----------------------------------------------------------------------
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -51,7 +39,6 @@ function AnimalCard({ animal, onPress, feedbackState }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  // Rebote cuando acierta
   useEffect(() => {
     if (feedbackState === 'correct') {
       Animated.sequence([
@@ -71,7 +58,6 @@ function AnimalCard({ animal, onPress, feedbackState }) {
     }
   }, [feedbackState, scaleAnim]);
 
-  // Sacudida cuando falla
   useEffect(() => {
     if (feedbackState === 'wrong') {
       Animated.sequence([
@@ -179,21 +165,19 @@ function AnimatedButton({ onPress, children, style }) {
 // -----------------------------------------------------------------
 export default function GameScreen({ route, navigation }) {
   const level = route.params?.level ?? 1;
-  // Las estrellas viajan entre niveles via params para acumularse
   const initialStars = route.params?.stars ?? 0;
 
-  // Generamos los animales del nivel UNA sola vez (no en cada render)
   const nivelData = useRef(generarNivel(level)).current;
   const animalesDelNivel = nivelData.animalesIds
     .map((id) => getAnimalById(id))
-    .filter(Boolean); // filtramos por si algún id no existe en animales.js
+    .filter(Boolean);
 
   const animalObjetivo = getAnimalById(nivelData.targetAnimalId);
   const colorObjetivo = getColorById(animalObjetivo?.colorId);
 
   const [stars, setStars] = useState(initialStars);
-  const [feedback, setFeedback] = useState(null);      // 'correct' | 'wrong' | null
-  const [pressedId, setPressedId] = useState(null);    // id del animal tocado
+  const [feedback, setFeedback] = useState(null);
+  const [pressedId, setPressedId] = useState(null);
 
   const soundRef = useRef(null);
 
@@ -211,23 +195,22 @@ export default function GameScreen({ route, navigation }) {
     }
   }, []);
 
-  // Reproduce el audio del color al entrar al nivel
+  // Solo limpiamos el sonido al salir — ya NO reproducimos nada al entrar.
+  // El audio del color se reproduce ÚNICAMENTE cuando el niño
+  // presiona el botón de bocina (🔊).
   useEffect(() => {
-    if (colorObjetivo?.audio) {
-      playSound(colorObjetivo.audio);
-    }
     return () => {
       soundRef.current?.unloadAsync();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Se ejecuta SOLO al presionar el botón de bocina
   const handleReplayAudio = () => {
     if (colorObjetivo?.audio) playSound(colorObjetivo.audio);
   };
 
   const handleAnimalPress = (animal) => {
-    if (feedback) return; // evitar doble toque mientras hay feedback activo
+    if (feedback) return;
 
     setPressedId(animal.id);
 
@@ -240,7 +223,7 @@ export default function GameScreen({ route, navigation }) {
       setTimeout(() => {
         navigation.navigate(SCREENS.LEVEL_COMPLETE, {
           level,
-          stars: newStars,           // pasamos las estrellas acumuladas
+          stars: newStars,
           isLastLevel: level >= TOTAL_NIVELES,
         });
       }, 1000);
@@ -455,8 +438,6 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   animalImage: {
-    // El animal debe caber dentro del hueco interior de la caja,
-    // que es más pequeño que el cuadro completo por el marco de madera.
     width: '70%',
     height: '70%',
   },
