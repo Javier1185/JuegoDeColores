@@ -198,7 +198,8 @@ function WoodButtonGreen({ label, onPress }) {
 // Pantalla principal
 // -----------------------------------------------------------------
 export default function LevelCompleteScreen({ route, navigation }) {
-  const { level, stars = 0, isLastLevel = false } = route.params ?? {};
+  const { level, stars = 0, isLastLevel = false, coloresUsados = [] } =
+    route.params ?? {};
 
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -238,7 +239,11 @@ export default function LevelCompleteScreen({ route, navigation }) {
     if (isLastLevel) {
       navigation.navigate(SCREENS.GAME_FINISHED, { stars });
     } else {
-      navigation.navigate(SCREENS.GAME, { level: level + 1, stars });
+      navigation.navigate(SCREENS.GAME, {
+        level: level + 1,
+        stars,
+        coloresUsados, // historial de colores para no repetir
+      });
     }
   };
 
@@ -276,7 +281,7 @@ export default function LevelCompleteScreen({ route, navigation }) {
           <Text style={styles.starsCount}>⭐ {stars} {stars === 1 ? 'estrella' : 'estrellas'}</Text>
 
           <WoodButtonGreen
-            label={isLastLevel ? 'Ver resultado final' : 'Siguiente Nivel'}
+            label={isLastLevel ? 'Ver resultado final' : 'Siguiente Nivel →'}
             onPress={handleContinue}
           />
         </Animated.View>

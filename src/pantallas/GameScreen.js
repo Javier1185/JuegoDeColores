@@ -166,8 +166,12 @@ function AnimatedButton({ onPress, children, style }) {
 export default function GameScreen({ route, navigation }) {
   const level = route.params?.level ?? 1;
   const initialStars = route.params?.stars ?? 0;
+  // Historial de colores ya pedidos en niveles anteriores
+  const coloresUsados = route.params?.coloresUsados ?? [];
 
-  const nivelData = useRef(generarNivel(level)).current;
+  // Generamos los animales del nivel UNA sola vez (no en cada render)
+  // Le pasamos coloresUsados para que el color objetivo no se repita
+  const nivelData = useRef(generarNivel(level, coloresUsados)).current;
   const animalesDelNivel = nivelData.animalesIds
     .map((id) => getAnimalById(id))
     .filter(Boolean);
@@ -220,11 +224,19 @@ export default function GameScreen({ route, navigation }) {
       setFeedback('correct');
       playSound(EFFECTS.correct);
 
+      // Agregamos el color de este nivel al historial para que
+      // el siguiente nivel no lo repita como objetivo
+      const nuevosColoresUsados = [
+        ...coloresUsados,
+        nivelData.colorId,
+      ].filter(Boolean);
+
       setTimeout(() => {
         navigation.navigate(SCREENS.LEVEL_COMPLETE, {
           level,
           stars: newStars,
           isLastLevel: level >= TOTAL_NIVELES,
+          coloresUsados: nuevosColoresUsados, // historial actualizado
         });
       }, 1000);
     } else {

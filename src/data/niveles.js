@@ -105,18 +105,21 @@ function pickRandom(array, cantidad) {
  * respetando la distribución de dificultad configurada.
  *
  * @param {number} numeroNivel - número de nivel (1, 2, 3...)
- * @returns {{ animalesIds: string[], targetAnimalId: string }}
+ * @param {string[]} coloresUsados - array de colorIds ya usados en
+ *   niveles anteriores (ej. ['rojo', 'azul']). El animal objetivo
+ *   del nuevo nivel nunca tendrá un color de esta lista, garantizando
+ *   que no se repita el color pedido entre niveles.
+ *
+ * @returns {{ animalesIds: string[], targetAnimalId: string, colorId: string }}
  *   - animalesIds: array de 4 ids de animales mezclados aleatoriamente
  *   - targetAnimalId: el id del animal que el jugador debe tocar
- *                     (uno de los animalesIds, elegido al azar)
+ *   - colorId: el colorId del animal objetivo (para guardarlo en el historial)
  */
-export function generarNivel(numeroNivel) {
-  // Si el nivel no existe, usamos el último disponible
+export function generarNivel(numeroNivel, coloresUsados = []) {
   const config =
     NIVELES_CONFIG.find((n) => n.nivel === numeroNivel) ||
     NIVELES_CONFIG[NIVELES_CONFIG.length - 1];
 
-  // Seleccionamos aleatoriamente los ids de cada categoría
   const seleccionFacil = pickRandom(
     ANIMALS_BY_DIFFICULTY.facil,
     config.cantidadFacil
@@ -130,18 +133,33 @@ export function generarNivel(numeroNivel) {
     config.cantidadDificil
   );
 
-  // Unimos los 4 animales y los volvemos a mezclar para que el animal
-  // correcto no siempre esté en la misma posición de la grilla.
   const animalesIds = shuffleArray([
     ...seleccionFacil,
     ...seleccionMedio,
     ...seleccionDificil,
   ]);
 
-  // El animal objetivo (el que debe tocar el niño) se elige al azar
-  // entre los 4 seleccionados.
-  const targetAnimalId =
-    animalesIds[Math.floor(Math.random() * animalesIds.length)];
+  // Intentamos elegir un animal objetivo cuyo color NO haya salido antes.
+  // Importamos la función getAnimalById para poder leer el colorId de
+  // cada candidato — usamos require para evitar dependencia circular.
+  const { getAnimalById } = require('../constantes/animales');
 
-  return { animalesIds, targetAnimalId };
+  // Candidatos: animales del nivel cuyos colores no están en el historial
+  const candidatos = animalesIds.filter((id) => {
+    const animal = getAnimalById(id);
+    return animal && !coloresUsados.includes(animal.colorId);
+  });
+
+  // Si todos los colores ya se usaron (partida muy larga), reseteamos
+  // el historial y elegimos cualquiera — el juego nunca se traba.
+  const pool = candidatos.length > 0 ? candidatos : animalesIds;
+
+  const targetAnimalId = pool[Math.floor(Math.random() * pool.length)];
+  const targetAnimal = getAnimalById(targetAnimalId);
+
+  return {
+    animalesIds,
+    targetAnimalId,
+    colorId: targetAnimal?.colorId ?? null,
+  };
 }
