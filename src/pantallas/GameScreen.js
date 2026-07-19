@@ -21,6 +21,7 @@ import {
   Animated,
   TouchableOpacity,
   Image,
+  ImageBackground,
   StyleSheet,
   ScrollView,
   Dimensions,
@@ -37,7 +38,7 @@ import ScreenBackground from '../components/common/ScreenBackground';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_GAP = 16;
-const MAX_CARD_SIZE = 170;
+const MAX_CARD_SIZE = 130;
 const CARD_SIZE = Math.min(
   (SCREEN_WIDTH - 32 - GRID_GAP) / 2,
   MAX_CARD_SIZE
@@ -110,7 +111,7 @@ function AnimalCard({ animal, onPress, feedbackState }) {
     >
       <Animated.View
         style={[
-          styles.animalCard,
+          styles.cardShadowWrapper,
           {
             transform: [
               { scale: scaleAnim },
@@ -119,11 +120,17 @@ function AnimalCard({ animal, onPress, feedbackState }) {
           },
         ]}
       >
-        <Image
-          source={animal.image}
-          style={styles.animalImage}
-          resizeMode="contain"
-        />
+        <ImageBackground
+          source={require('../../assets/images/game/caja_fondo.png')}
+          style={styles.animalCard}
+          imageStyle={styles.animalCardImage}
+        >
+          <Image
+            source={animal.image}
+            style={styles.animalImage}
+            resizeMode="contain"
+          />
+        </ImageBackground>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -430,22 +437,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: GRID_GAP,
   },
-  animalCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
-    backgroundColor: 'rgba(255,255,255,0.90)',
+  cardShadowWrapper: {
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
   },
+  animalCard: {
+    width: CARD_SIZE,
+    height: CARD_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  animalCardImage: {
+    resizeMode: 'contain',
+  },
   animalImage: {
-    width: '75%',
-    height: '75%',
+    // El animal debe caber dentro del hueco interior de la caja,
+    // que es más pequeño que el cuadro completo por el marco de madera.
+    width: '70%',
+    height: '70%',
   },
   feedbackBanner: {
     position: 'absolute',

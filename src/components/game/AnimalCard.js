@@ -24,7 +24,7 @@ import { Animated, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
 import { PALETTE, RADIUS, SHADOWS } from '../../styles/tema';
 
-export default function AnimalCard({ animal, onPress, size = 150, feedbackState }) {
+export default function AnimalCard({ animal, onPress, size = 130, feedbackState }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.soft,
   },
   image: {
-    width: '75%',
-    height: '75%',
+    width: '90%',
+    height: '90%',
   },
 });
