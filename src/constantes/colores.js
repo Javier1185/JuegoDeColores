@@ -60,6 +60,31 @@ export const COLORS_LIST = [
   hex: '#ff6f00',
   audio: require('../../assets/audio/colors/naranja.mp3'),
 },
+{
+  id: 'morado',
+  label: 'MORADO',
+  hex: '#800080',
+  audio: require('../../assets/audio/colors/morado.mp3'),
+},
+{
+  id: 'negro',
+  label: 'NEGRA',
+  hex: '#000000',
+  audio: require('../../assets/audio/colors/negro.mp3'),
+},
+{
+  id: 'blanco',
+  label: 'BLANCO',
+  hex: '#FFFFFF',
+  audio: require('../../assets/audio/colors/blanco.mp3'),
+},
+{
+  id: 'celeste',
+  label: 'CELESTE',
+  hex: '#ADD8E6',
+  audio: require('../../assets/audio/colors/celeste.mp3'),
+},
+
 ];
 
 /**

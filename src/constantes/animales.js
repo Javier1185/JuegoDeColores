@@ -60,6 +60,30 @@ export const ANIMALS_LIST = [
     colorId: 'naranja',
     image: require('../../assets/images/animals/jirafa.png'),
   },
+  {
+    id: 'delfin',
+    name: 'delfin',
+    colorId: 'celeste',
+    image: require('../../assets/images/animals/delfin.png'),
+  },
+  {
+    id: 'gato',
+    name: 'gato',
+    colorId: 'blanco',
+    image: require('../../assets/images/animals/gato.png'),
+  },
+  {
+    id: 'mariposa',
+    name: 'mariposa',
+    colorId: 'morado',
+    image: require('../../assets/images/animals/mariposa.png'),
+  },
+  {
+    id: 'orca',
+    name: 'orca',
+    colorId: 'negro',
+    image: require('../../assets/images/animals/orca.png'),
+  },
 ];
 
 /**
