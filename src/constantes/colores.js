@@ -21,7 +21,7 @@ export const COLORS_LIST = [
 {
   id: 'rojo',
   label: 'ROJO',
-  hex: '#E74C3C',
+  hex: '#e91f1f',
   audio: require('../../assets/audio/colors/rojo.mp3'),
 },
 {
@@ -53,6 +53,12 @@ export const COLORS_LIST = [
   label: 'CHOCOLATE',
   hex: '#8B4513',
   audio: require('../../assets/audio/colors/chocolate.mp3'),
+},
+{
+  id: 'naranja',
+  label: 'NARANJA',
+  hex: '#ff6f00',
+  audio: require('../../assets/audio/colors/naranja.mp3'),
 },
 ];
 

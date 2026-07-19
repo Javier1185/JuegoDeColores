@@ -51,13 +51,13 @@ export const ANIMALS_LIST = [
   {
     id: 'ardilla',
     name: 'ardilla',
-    colorId: 'marron',
+    colorId: 'chocolate',
     image: require('../../assets/images/animals/ardilla.png'),
   },
   {
     id: 'jirafa',
     name: 'jirafa',
-    colorId: 'amarillo',
+    colorId: 'naranja',
     image: require('../../assets/images/animals/jirafa.png'),
   },
 ];
