@@ -276,7 +276,7 @@ export default function LevelCompleteScreen({ route, navigation }) {
 
           <StarsAnimated earnedCount={3} size={52} />
 
-          <Text style={styles.title}>¡Excelente! 🎉</Text>
+          <Text style={styles.title}>¡Excelente!</Text>
           <Text style={styles.subtitle}>Nivel {level} completado</Text>
           <Text style={styles.starsCount}>⭐ {stars} {stars === 1 ? 'estrella' : 'estrellas'}</Text>
 
