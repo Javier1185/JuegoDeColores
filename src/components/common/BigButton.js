@@ -23,6 +23,7 @@ import React, { useRef } from 'react';
 import { Animated, Text, StyleSheet, Pressable } from 'react-native';
 
 import { PALETTE, FONT_SIZES, RADIUS, SHADOWS } from '../../styles/tema';
+import { reproducirSonidoBoton } from '../../utils/sonidoBoton';
 
 export default function BigButton({
   label,
@@ -53,9 +54,14 @@ export default function BigButton({
     }).start();
   };
 
+  const handlePress = (event) => {
+    reproducirSonidoBoton();
+    onPress?.(event);
+  };
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}

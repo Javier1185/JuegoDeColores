@@ -11,8 +11,11 @@ import {
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
+import { Audio } from 'expo-av';
 
 import { SCREENS } from '../navegacion/AppNavigator';
+import { EFFECTS } from '../constantes/configuracionAudio';
+import { reproducirSonidoBoton } from '../utils/sonidoBoton';
 
 // Imágenes del niño
 import NinoImage from '../../assets/images/niño/niño.png';
@@ -169,6 +172,9 @@ export default function LevelCompleteScreen({
     new Animated.Value(0)
   ).current;
 
+  // Sound ref para el efecto de "incorrecto"
+  const soundRef = useRef(null);
+
   /*
    * Obtiene el color enviado desde GameScreen.
    * Si no llega, utiliza el último color guardado.
@@ -236,11 +242,43 @@ export default function LevelCompleteScreen({
 
   /*
   |--------------------------------------------------------------------------
+  | Sonido automático al perder (2 intentos incorrectos)
+  |--------------------------------------------------------------------------
+  | Se reproduce una sola vez al entrar a la pantalla, solo cuando
+  | resultado === 'incorrecto' (el niño triste). No se reproduce
+  | en GameScreen.js: eso ya se quitó de ahí para que el sonido de
+  | "wrong" solo suene UNA vez, aquí, al agotar los intentos.
+  */
+  useEffect(() => {
+    if (!esCorrecto) {
+      Audio.Sound.createAsync(EFFECTS.wrong)
+        .then(({ sound }) => {
+          soundRef.current = sound;
+          return sound.playAsync();
+        })
+        .catch((error) => {
+          console.warn(
+            'Error reproduciendo audio de incorrecto:',
+            error
+          );
+        });
+    }
+
+    return () => {
+      soundRef.current?.unloadAsync();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
   | Continuar o volver a intentar
   |--------------------------------------------------------------------------
   */
 
   const handleContinue = () => {
+    reproducirSonidoBoton();
+
     /*
      * Si se equivocó dos veces, vuelve a crear
      * el mismo nivel con las mismas estrellas.
@@ -289,6 +327,8 @@ export default function LevelCompleteScreen({
   */
 
   const handleHome = () => {
+    reproducirSonidoBoton();
+
     if (SCREENS.HOME) {
       navigation.navigate(SCREENS.HOME);
     } else {

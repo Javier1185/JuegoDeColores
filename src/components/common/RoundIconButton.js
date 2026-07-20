@@ -21,6 +21,7 @@ import React, { useRef } from 'react';
 import { Animated, Text, Image, StyleSheet, Pressable } from 'react-native';
 
 import { PALETTE, SHADOWS } from '../../styles/tema';
+import { reproducirSonidoBoton } from '../../utils/sonidoBoton';
 
 export default function RoundIconButton({
   icon,
@@ -49,8 +50,13 @@ export default function RoundIconButton({
     }).start();
   };
 
+  const handlePress = (event) => {
+    reproducirSonidoBoton();
+    onPress?.(event);
+  };
+
   return (
-    <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+    <Pressable onPress={handlePress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
       <Animated.View
         style={[
           styles.circle,

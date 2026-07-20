@@ -326,8 +326,6 @@ export default function GameScreen({ route, navigation }) {
     setIntentosIncorrectos(nuevosIntentos);
     setFeedback('wrong');
 
-    playSound(EFFECTS.wrong);
-
     // Si se equivocó dos veces, muestra al niño triste
     if (
       nuevosIntentos >=

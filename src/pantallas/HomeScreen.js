@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
 import ScreenBackground from '../components/common/ScreenBackground';
+import { reproducirSonidoBoton } from '../utils/sonidoBoton';
 
 function WoodButton({ label, onPress, colors }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -53,9 +54,14 @@ function WoodButton({ label, onPress, colors }) {
     ]).start();
   };
 
+  const handlePress = (event) => {
+    reproducirSonidoBoton();
+    onPress?.(event);
+  };
+
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       activeOpacity={0.85}
