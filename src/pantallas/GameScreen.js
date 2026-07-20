@@ -2,7 +2,13 @@
  * GameScreen.js
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from 'react';
+
 import {
   View,
   Text,
@@ -14,17 +20,23 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+
 import { Audio } from 'expo-av';
 
 import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
 import { getAnimalById } from '../constantes/animales';
 import { getColorById } from '../constantes/colores';
-import { EFFECTS } from '../constantes/configuracionAudio';
-import { generarNivel, TOTAL_NIVELES } from '../data/niveles';
+import {
+  generarNivel,
+  TOTAL_NIVELES,
+} from '../data/niveles';
+
 import ScreenBackground from '../components/common/ScreenBackground';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } =
+  Dimensions.get('window');
+
 const GRID_GAP = 16;
 const MAX_CARD_SIZE = 150;
 
@@ -36,13 +48,28 @@ const CARD_SIZE = Math.min(
   MAX_CARD_SIZE
 );
 
-// -----------------------------------------------------------------
-// Componente interno: tarjeta de animal con animaciones
-// -----------------------------------------------------------------
-function AnimalCard({ animal, onPress, feedbackState }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+/*
+|--------------------------------------------------------------------------
+| Tarjeta del animal
+|--------------------------------------------------------------------------
+*/
 
+function AnimalCard({
+  animal,
+  onPress,
+  feedbackState,
+}) {
+  const scaleAnim = useRef(
+    new Animated.Value(1)
+  ).current;
+
+  const shakeAnim = useRef(
+    new Animated.Value(0)
+  ).current;
+
+  /*
+   * Animación de respuesta correcta.
+   */
   useEffect(() => {
     if (feedbackState === 'correct') {
       Animated.sequence([
@@ -52,6 +79,7 @@ function AnimalCard({ animal, onPress, feedbackState }) {
           speed: 20,
           bounciness: 12,
         }),
+
         Animated.spring(scaleAnim, {
           toValue: 1,
           useNativeDriver: true,
@@ -62,6 +90,9 @@ function AnimalCard({ animal, onPress, feedbackState }) {
     }
   }, [feedbackState, scaleAnim]);
 
+  /*
+   * Animación de respuesta incorrecta.
+   */
   useEffect(() => {
     if (feedbackState === 'wrong') {
       Animated.sequence([
@@ -70,21 +101,25 @@ function AnimalCard({ animal, onPress, feedbackState }) {
           duration: 60,
           useNativeDriver: true,
         }),
+
         Animated.timing(shakeAnim, {
           toValue: 10,
           duration: 60,
           useNativeDriver: true,
         }),
+
         Animated.timing(shakeAnim, {
           toValue: -7,
           duration: 60,
           useNativeDriver: true,
         }),
+
         Animated.timing(shakeAnim, {
           toValue: 7,
           duration: 60,
           useNativeDriver: true,
         }),
+
         Animated.timing(shakeAnim, {
           toValue: 0,
           duration: 60,
@@ -124,14 +159,20 @@ function AnimalCard({ animal, onPress, feedbackState }) {
           styles.cardShadowWrapper,
           {
             transform: [
-              { scale: scaleAnim },
-              { translateX: shakeAnim },
+              {
+                scale: scaleAnim,
+              },
+              {
+                translateX: shakeAnim,
+              },
             ],
           },
         ]}
       >
         <ImageBackground
-          source={require('../../assets/images/game/caja_fondo.png')}
+          source={require(
+            '../../assets/images/game/caja_fondo.png'
+          )}
           style={styles.animalCard}
           imageStyle={styles.animalCardImage}
         >
@@ -146,11 +187,20 @@ function AnimalCard({ animal, onPress, feedbackState }) {
   );
 }
 
-// -----------------------------------------------------------------
-// Componente interno: botón con animación de presión
-// -----------------------------------------------------------------
-function AnimatedButton({ onPress, children, style }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+/*
+|--------------------------------------------------------------------------
+| Botón animado
+|--------------------------------------------------------------------------
+*/
+
+function AnimatedButton({
+  onPress,
+  children,
+  style,
+}) {
+  const scaleAnim = useRef(
+    new Animated.Value(1)
+  ).current;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -181,7 +231,11 @@ function AnimatedButton({ onPress, children, style }) {
         style={[
           style,
           {
-            transform: [{ scale: scaleAnim }],
+            transform: [
+              {
+                scale: scaleAnim,
+              },
+            ],
           },
         ]}
       >
@@ -191,24 +245,40 @@ function AnimatedButton({ onPress, children, style }) {
   );
 }
 
-// -----------------------------------------------------------------
-// Pantalla principal
-// -----------------------------------------------------------------
-export default function GameScreen({ route, navigation }) {
-  const level = route.params?.level ?? 1;
-  const initialStars = route.params?.stars ?? 0;
+/*
+|--------------------------------------------------------------------------
+| Pantalla principal del juego
+|--------------------------------------------------------------------------
+*/
 
-  // Historial de colores usados en niveles anteriores
-  const coloresUsados = route.params?.coloresUsados ?? [];
+export default function GameScreen({
+  route,
+  navigation,
+}) {
+  const level =
+    route.params?.level ?? 1;
 
-  // Generamos los animales del nivel una sola vez
+  const initialStars =
+    route.params?.stars ?? 0;
+
+  // Historial de colores usados
+  const coloresUsados =
+    route.params?.coloresUsados ?? [];
+
+  /*
+  |--------------------------------------------------------------------------
+  | Generación del nivel
+  |--------------------------------------------------------------------------
+  */
+
   const nivelData = useRef(
     generarNivel(level, coloresUsados)
   ).current;
 
-  const animalesDelNivel = nivelData.animalesIds
-    .map((id) => getAnimalById(id))
-    .filter(Boolean);
+  const animalesDelNivel =
+    nivelData.animalesIds
+      .map((id) => getAnimalById(id))
+      .filter(Boolean);
 
   const animalObjetivo = getAnimalById(
     nivelData.targetAnimalId
@@ -218,76 +288,127 @@ export default function GameScreen({ route, navigation }) {
     animalObjetivo?.colorId
   );
 
-  const [stars, setStars] = useState(initialStars);
-  const [feedback, setFeedback] = useState(null);
-  const [pressedId, setPressedId] = useState(null);
+  /*
+  |--------------------------------------------------------------------------
+  | Estados
+  |--------------------------------------------------------------------------
+  */
 
-  // Contador de respuestas incorrectas
+  const [stars, setStars] =
+    useState(initialStars);
+
+  const [feedback, setFeedback] =
+    useState(null);
+
+  const [pressedId, setPressedId] =
+    useState(null);
+
   const [
     intentosIncorrectos,
     setIntentosIncorrectos,
   ] = useState(0);
 
+  /*
+  |--------------------------------------------------------------------------
+  | Audio del color
+  |--------------------------------------------------------------------------
+  */
+
   const soundRef = useRef(null);
 
-  const playSound = useCallback(async (soundAsset) => {
-    try {
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
+  const playSound = useCallback(
+    async (soundAsset) => {
+      try {
+        if (soundRef.current) {
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+
+        const { sound } =
+          await Audio.Sound.createAsync(
+            soundAsset
+          );
+
+        soundRef.current = sound;
+
+        await sound.playAsync();
+      } catch (error) {
+        console.warn(
+          'Error reproduciendo audio:',
+          error
+        );
       }
+    },
+    []
+  );
 
-      const { sound } = await Audio.Sound.createAsync(
-        soundAsset
-      );
-
-      soundRef.current = sound;
-
-      await sound.playAsync();
-    } catch (error) {
-      console.warn(
-        'Error reproduciendo audio:',
-        error
-      );
-    }
-  }, []);
-
-  // Limpiar el sonido al salir
+  /*
+   * Limpia el sonido cuando sale de GameScreen.
+   */
   useEffect(() => {
     return () => {
-      soundRef.current?.unloadAsync();
+      if (soundRef.current) {
+        soundRef.current
+          .unloadAsync()
+          .catch(() => {});
+
+        soundRef.current = null;
+      }
     };
   }, []);
 
-  // Reproduce el audio del color cuando se presiona la bocina
+  /*
+   * Reproduce únicamente el audio del color
+   * cuando se presiona el botón de bocina.
+   */
   const handleReplayAudio = () => {
     if (colorObjetivo?.audio) {
       playSound(colorObjetivo.audio);
     }
   };
 
-  // -----------------------------------------------------------------
-  // Validación de la respuesta
-  // -----------------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Validar animal seleccionado
+  |--------------------------------------------------------------------------
+  */
+
   const handleAnimalPress = (animal) => {
-    // Bloquea temporalmente los demás animales
-    if (feedback) return;
+    /*
+     * Evita seleccionar otro animal mientras
+     * se muestra la animación.
+     */
+    if (feedback) {
+      return;
+    }
 
     setPressedId(animal.id);
 
-    // ---------------------------------------------------------------
-    // RESPUESTA CORRECTA
-    // ---------------------------------------------------------------
-    if (animal.id === animalObjetivo?.id) {
+    /*
+    |--------------------------------------------------------------------------
+    | Respuesta correcta
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      animal.id === animalObjetivo?.id
+    ) {
       const newStars = stars + 1;
 
       setStars(newStars);
       setIntentosIncorrectos(0);
       setFeedback('correct');
 
-      playSound(EFFECTS.correct);
+      /*
+       * IMPORTANTE:
+       *
+       * Aquí ya no se reproduce ningún audio
+       * de respuesta correcta.
+       *
+       * El audio aleatorio se reproduce en
+       * LevelCompleteScreen.
+       */
 
-      // Agrega el color al historial
       const nuevosColoresUsados = [
         ...coloresUsados,
         nivelData.colorId,
@@ -299,12 +420,13 @@ export default function GameScreen({ route, navigation }) {
           {
             level,
             stars: newStars,
+
             isLastLevel:
               level >= TOTAL_NIVELES,
+
             coloresUsados:
               nuevosColoresUsados,
 
-            // Mostrará el niño feliz
             resultado: 'correcto',
 
             colorCorrecto:
@@ -317,22 +439,30 @@ export default function GameScreen({ route, navigation }) {
       return;
     }
 
-    // ---------------------------------------------------------------
-    // RESPUESTA INCORRECTA
-    // ---------------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | Respuesta incorrecta
+    |--------------------------------------------------------------------------
+    */
+
     const nuevosIntentos =
       intentosIncorrectos + 1;
 
-    setIntentosIncorrectos(nuevosIntentos);
+    setIntentosIncorrectos(
+      nuevosIntentos
+    );
+
     setFeedback('wrong');
 
-    // Si se equivocó dos veces, muestra al niño triste
+    /*
+     * Si se equivocó dos veces, abre
+     * LevelCompleteScreen con el niño triste.
+     */
     if (
       nuevosIntentos >=
       MAX_INTENTOS_INCORRECTOS
     ) {
       setTimeout(() => {
-        // Limpia el estado de la pantalla
         setFeedback(null);
         setPressedId(null);
         setIntentosIncorrectos(0);
@@ -342,13 +472,12 @@ export default function GameScreen({ route, navigation }) {
           {
             level,
             stars,
+
             isLastLevel:
               level >= TOTAL_NIVELES,
 
-            // No se agrega el color porque no acertó
             coloresUsados,
 
-            // Mostrará el niño triste
             resultado: 'incorrecto',
 
             colorCorrecto:
@@ -361,12 +490,21 @@ export default function GameScreen({ route, navigation }) {
       return;
     }
 
-    // En el primer error permite intentar nuevamente
+    /*
+     * En el primer error permite
+     * volver a intentarlo.
+     */
     setTimeout(() => {
       setFeedback(null);
       setPressedId(null);
     }, 1000);
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Validación del nivel
+  |--------------------------------------------------------------------------
+  */
 
   if (!colorObjetivo || !animalObjetivo) {
     return (
@@ -377,6 +515,12 @@ export default function GameScreen({ route, navigation }) {
       </View>
     );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Interfaz
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <ScreenBackground
@@ -389,7 +533,9 @@ export default function GameScreen({ route, navigation }) {
         <View style={styles.header}>
           <AnimatedButton
             onPress={() =>
-              navigation.navigate(SCREENS.HOME)
+              navigation.navigate(
+                SCREENS.HOME
+              )
             }
             style={styles.iconButton}
           >
@@ -415,7 +561,7 @@ export default function GameScreen({ route, navigation }) {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Banner del color solicitado */}
+          {/* Instrucción del color */}
           <View style={styles.promptBanner}>
             <AnimatedButton
               onPress={handleReplayAudio}
@@ -430,7 +576,8 @@ export default function GameScreen({ route, navigation }) {
               Toca el animal{' '}
               <Text
                 style={{
-                  color: colorObjetivo.hex,
+                  color:
+                    colorObjetivo.hex,
                 }}
               >
                 {colorObjetivo.label}
@@ -439,27 +586,75 @@ export default function GameScreen({ route, navigation }) {
           </View>
 
           {/* Animales */}
-          <View style={styles.animalsGridWrapper}>
+          <View
+            style={
+              styles.animalsGridWrapper
+            }
+          >
             <View style={styles.animalsGrid}>
-              {animalesDelNivel.map((animal) => (
-                <AnimalCard
-                  key={animal.id}
-                  animal={animal}
-                  onPress={handleAnimalPress}
-                  feedbackState={
-                    pressedId === animal.id
-                      ? feedback
-                      : null
-                  }
-                />
-              ))}
+              {animalesDelNivel.map(
+                (animal) => (
+                  <AnimalCard
+                    key={animal.id}
+                    animal={animal}
+                    onPress={
+                      handleAnimalPress
+                    }
+                    feedbackState={
+                      pressedId === animal.id
+                        ? feedback
+                        : null
+                    }
+                  />
+                )
+              )}
             </View>
           </View>
         </ScrollView>
+
+        {/* Mensaje de respuesta correcta */}
+        {feedback === 'correct' && (
+          <View
+            style={[
+              styles.feedbackBanner,
+              {
+                backgroundColor:
+                  PALETTE.success,
+              },
+            ]}
+          >
+            <Text style={styles.feedbackText}>
+              ¡Correcto! 🎉
+            </Text>
+          </View>
+        )}
+
+        {/* Mensaje de respuesta incorrecta */}
+        {feedback === 'wrong' && (
+          <View
+            style={[
+              styles.feedbackBanner,
+              {
+                backgroundColor:
+                  PALETTE.error,
+              },
+            ]}
+          >
+            <Text style={styles.feedbackText}>
+              ¡Intenta de nuevo! 💪
+            </Text>
+          </View>
+        )}
       </View>
     </ScreenBackground>
   );
 }
+
+/*
+|--------------------------------------------------------------------------
+| Estilos
+|--------------------------------------------------------------------------
+*/
 
 const styles = StyleSheet.create({
   container: {
@@ -482,17 +677,21 @@ const styles = StyleSheet.create({
   },
 
   iconButton: {
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor:
+      'rgba(255,255,255,0.85)',
     borderRadius: 24,
     width: 48,
     height: 48,
     justifyContent: 'center',
     alignItems: 'center',
+
     shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 2,
     },
+
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
@@ -519,11 +718,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 12,
+
     shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 2,
     },
+
     shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
@@ -556,11 +758,14 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 16,
     marginBottom: 24,
+
     shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 2,
     },
+
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
@@ -574,11 +779,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+
     shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 2,
     },
+
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
@@ -604,11 +812,14 @@ const styles = StyleSheet.create({
 
   cardShadowWrapper: {
     borderRadius: 20,
+
     shadowColor: '#000',
+
     shadowOffset: {
       width: 0,
       height: 2,
     },
+
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,

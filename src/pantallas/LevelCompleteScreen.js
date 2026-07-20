@@ -12,9 +12,16 @@ import {
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SCREENS } from '../navegacion/AppNavigator';
-import { EFFECTS } from '../constantes/configuracionAudio';
+
+import {
+  MENSAJES_CORRECTOS,
+  MENSAJES_INCORRECTOS,
+  obtenerMensajeAleatorio,
+} from '../constantes/mensajes';
+
 import { reproducirSonidoBoton } from '../utils/sonidoBoton';
 
 // Imágenes del niño
@@ -23,7 +30,7 @@ import NinoTristeImage from '../../assets/images/niño/niño_triste.png';
 
 /*
 |--------------------------------------------------------------------------
-| Colores del texto
+| Colores disponibles
 |--------------------------------------------------------------------------
 */
 
@@ -40,7 +47,7 @@ const COLOR_HEX = {
 
 /*
 |--------------------------------------------------------------------------
-| Posiciones del confeti
+| Confeti
 |--------------------------------------------------------------------------
 */
 
@@ -133,7 +140,7 @@ const CONFETTI = [
 
 /*
 |--------------------------------------------------------------------------
-| Pantalla de nivel completado
+| Pantalla de resultado
 |--------------------------------------------------------------------------
 */
 
@@ -143,22 +150,62 @@ export default function LevelCompleteScreen({
 }) {
   const { height } = useWindowDimensions();
 
+  /*
+   * Obtiene el espacio seguro del dispositivo.
+   * Evita que la barra superior quede detrás
+   * del notch o la isla dinámica.
+   */
+  const insets = useSafeAreaInsets();
+
+  /*
+  |--------------------------------------------------------------------------
+  | Parámetros recibidos desde GameScreen
+  |--------------------------------------------------------------------------
+  */
+
   const {
     level = 1,
     stars = 0,
     isLastLevel = false,
     coloresUsados = [],
-
-    // Información enviada desde GameScreen
     resultado = 'correcto',
     colorCorrecto = '',
   } = route.params ?? {};
 
+  const esCorrecto =
+    resultado === 'correcto';
+
   /*
-   * Si resultado es "correcto", muestra el niño feliz.
-   * Si resultado es "incorrecto", muestra el niño triste.
+  |--------------------------------------------------------------------------
+  | Seleccionar mensaje aleatorio
+  |--------------------------------------------------------------------------
+  */
+
+  const mensajeSeleccionado = useRef(
+    obtenerMensajeAleatorio(
+      esCorrecto
+        ? MENSAJES_CORRECTOS
+        : MENSAJES_INCORRECTOS
+    )
+  ).current;
+
+  /*
+   * Mensaje de respaldo para evitar
+   * que la pantalla quede en blanco.
    */
-  const esCorrecto = resultado === 'correcto';
+  const mensaje =
+    mensajeSeleccionado ?? {
+      texto: esCorrecto
+        ? '¡Muy bien!'
+        : '¡Vamos otra vez!',
+      audio: null,
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Animaciones
+  |--------------------------------------------------------------------------
+  */
 
   const scaleAnim = useRef(
     new Animated.Value(0.6)
@@ -172,13 +219,17 @@ export default function LevelCompleteScreen({
     new Animated.Value(0)
   ).current;
 
-  // Sound ref para el efecto de "incorrecto"
+  /*
+   * Referencia del audio.
+   */
   const soundRef = useRef(null);
 
   /*
-   * Obtiene el color enviado desde GameScreen.
-   * Si no llega, utiliza el último color guardado.
-   */
+  |--------------------------------------------------------------------------
+  | Color encontrado
+  |--------------------------------------------------------------------------
+  */
+
   const ultimoColor = String(
     colorCorrecto ||
       (coloresUsados.length > 0
@@ -193,7 +244,7 @@ export default function LevelCompleteScreen({
 
   /*
   |--------------------------------------------------------------------------
-  | Animaciones
+  | Ejecutar animaciones
   |--------------------------------------------------------------------------
   */
 
@@ -213,21 +264,22 @@ export default function LevelCompleteScreen({
       }),
     ]).start();
 
-    const floatingAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatingAnim, {
-          toValue: -7,
-          duration: 850,
-          useNativeDriver: true,
-        }),
+    const floatingAnimation =
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatingAnim, {
+            toValue: -7,
+            duration: 850,
+            useNativeDriver: true,
+          }),
 
-        Animated.timing(floatingAnim, {
-          toValue: 0,
-          duration: 850,
-          useNativeDriver: true,
-        }),
-      ])
-    );
+          Animated.timing(floatingAnim, {
+            toValue: 0,
+            duration: 850,
+            useNativeDriver: true,
+          }),
+        ])
+      );
 
     floatingAnimation.start();
 
@@ -242,37 +294,80 @@ export default function LevelCompleteScreen({
 
   /*
   |--------------------------------------------------------------------------
-  | Sonido automático al perder (2 intentos incorrectos)
+  | Reproducir el audio del mensaje
   |--------------------------------------------------------------------------
-  | Se reproduce una sola vez al entrar a la pantalla, solo cuando
-  | resultado === 'incorrecto' (el niño triste). No se reproduce
-  | en GameScreen.js: eso ya se quitó de ahí para que el sonido de
-  | "wrong" solo suene UNA vez, aquí, al agotar los intentos.
   */
+
   useEffect(() => {
-    if (!esCorrecto) {
-      Audio.Sound.createAsync(EFFECTS.wrong)
-        .then(({ sound }) => {
-          soundRef.current = sound;
-          return sound.playAsync();
-        })
-        .catch((error) => {
-          console.warn(
-            'Error reproduciendo audio de incorrecto:',
-            error
+    let pantallaActiva = true;
+
+    const reproducirMensaje = async () => {
+      try {
+        /*
+         * Si no tiene audio, continúa mostrando
+         * la pantalla normalmente.
+         */
+        if (!mensaje.audio) {
+          return;
+        }
+
+        /*
+         * Limpia cualquier audio anterior.
+         */
+        if (soundRef.current) {
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+
+        /*
+         * Carga el audio asociado con la frase.
+         */
+        const { sound } =
+          await Audio.Sound.createAsync(
+            mensaje.audio
           );
-        });
-    }
+
+        if (!pantallaActiva) {
+          await sound.unloadAsync();
+          return;
+        }
+
+        soundRef.current = sound;
+
+        /*
+         * Reproduce el mensaje automáticamente.
+         */
+        await sound.playAsync();
+      } catch (error) {
+        /*
+         * Un error de audio no debe dejar
+         * la pantalla en blanco.
+         */
+        console.warn(
+          'Error reproduciendo el mensaje:',
+          error
+        );
+      }
+    };
+
+    reproducirMensaje();
 
     return () => {
-      soundRef.current?.unloadAsync();
+      pantallaActiva = false;
+
+      if (soundRef.current) {
+        soundRef.current
+          .unloadAsync()
+          .catch(() => {});
+
+        soundRef.current = null;
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mensaje.audio]);
 
   /*
   |--------------------------------------------------------------------------
-  | Continuar o volver a intentar
+  | Continuar o reintentar
   |--------------------------------------------------------------------------
   */
 
@@ -280,8 +375,7 @@ export default function LevelCompleteScreen({
     reproducirSonidoBoton();
 
     /*
-     * Si se equivocó dos veces, vuelve a crear
-     * el mismo nivel con las mismas estrellas.
+     * Si falló dos veces, repite el nivel.
      */
     if (!esCorrecto) {
       navigation.replace(SCREENS.GAME, {
@@ -294,8 +388,8 @@ export default function LevelCompleteScreen({
     }
 
     /*
-     * Si respondió correctamente y es el último
-     * nivel, abre el resultado final.
+     * Si completó el último nivel,
+     * muestra el resultado final.
      */
     if (isLastLevel) {
       navigation.navigate(
@@ -310,8 +404,7 @@ export default function LevelCompleteScreen({
     }
 
     /*
-     * Si respondió correctamente y todavía
-     * quedan niveles, avanza al siguiente.
+     * Avanza al siguiente nivel.
      */
     navigation.navigate(SCREENS.GAME, {
       level: level + 1,
@@ -335,6 +428,12 @@ export default function LevelCompleteScreen({
       navigation.goBack();
     }
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Interfaz
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <View style={styles.container}>
@@ -385,7 +484,7 @@ export default function LevelCompleteScreen({
       {/* Capa oscura */}
       <View style={styles.backgroundOverlay} />
 
-      {/* El confeti solo aparece al acertar */}
+      {/* Confeti: aparece solamente al acertar */}
       {esCorrecto &&
         CONFETTI.map((item, index) => (
           <View
@@ -394,7 +493,9 @@ export default function LevelCompleteScreen({
               styles.confetti,
               item,
               {
-                backgroundColor: item.color,
+                backgroundColor:
+                  item.color,
+
                 transform: [
                   {
                     rotate: item.rotate,
@@ -405,8 +506,23 @@ export default function LevelCompleteScreen({
           />
         ))}
 
-      {/* Barra superior */}
-      <View style={styles.topBar}>
+      {/*
+      |--------------------------------------------------------------------------
+      | Barra superior
+      |--------------------------------------------------------------------------
+      |
+      | La posición utiliza insets.top para evitar
+      | la isla dinámica y la barra de estado.
+      */}
+
+      <View
+        style={[
+          styles.topBar,
+          {
+            top: insets.top + 8,
+          },
+        ]}
+      >
         {/* Botón de inicio */}
         <TouchableOpacity
           style={styles.homeButton}
@@ -418,7 +534,7 @@ export default function LevelCompleteScreen({
           </Text>
         </TouchableOpacity>
 
-        {/* Encabezado dinámico */}
+        {/* Nivel completado o reintentar */}
         <LinearGradient
           colors={
             esCorrecto
@@ -448,12 +564,13 @@ export default function LevelCompleteScreen({
         </View>
       </View>
 
-      {/* Contenido central */}
+      {/* Contenido principal */}
       <Animated.View
         style={[
           styles.celebrationWrapper,
           {
             opacity: opacityAnim,
+
             transform: [
               {
                 scale: scaleAnim,
@@ -487,27 +604,29 @@ export default function LevelCompleteScreen({
               ]}
               style={styles.paperCard}
             >
-              {/* Título dinámico */}
+              {/* Mensaje aleatorio */}
               <Text
                 style={[
                   styles.title,
+
+                  mensaje.texto.length > 15 &&
+                    styles.longTitle,
+
                   !esCorrecto &&
                     styles.incorrectTitle,
                 ]}
               >
-                {esCorrecto
-                  ? '¡Excelente!'
-                  : '¡Oh, no!'}
+                {mensaje.texto}
               </Text>
 
-              {/* Subtítulo dinámico */}
+              {/* Subtítulo */}
               <Text style={styles.subtitle}>
                 {esCorrecto
                   ? '¡Muy bien hecho!'
                   : 'No fue esta vez'}
               </Text>
 
-              {/* Mensaje dinámico */}
+              {/* Resultado */}
               {esCorrecto ? (
                 <Text
                   style={
@@ -515,6 +634,7 @@ export default function LevelCompleteScreen({
                   }
                 >
                   Encontraste el color{' '}
+
                   <Text
                     style={[
                       styles.colorName,
@@ -536,12 +656,11 @@ export default function LevelCompleteScreen({
                 >
                   Te equivocaste dos veces.
                   {'\n'}
-                  ¡Puedes intentarlo
-                  nuevamente!
+                  ¡Puedes intentarlo nuevamente!
                 </Text>
               )}
 
-              {/* Imagen dinámica */}
+              {/* Imagen feliz o triste */}
               <View
                 style={[
                   styles.characterContainer,
@@ -602,6 +721,7 @@ export default function LevelCompleteScreen({
         <TouchableOpacity
           style={[
             styles.continueButtonContainer,
+
             !esCorrecto &&
               styles.retryButtonContainer,
           ]}
@@ -616,6 +736,7 @@ export default function LevelCompleteScreen({
             }
             style={[
               styles.continueButton,
+
               !esCorrecto &&
                 styles.retryButton,
             ]}
@@ -657,6 +778,7 @@ const styles = StyleSheet.create({
 
   backgroundOverlay: {
     ...StyleSheet.absoluteFillObject,
+
     backgroundColor:
       'rgba(13, 57, 44, 0.28)',
   },
@@ -668,6 +790,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
+
     backgroundColor:
       'rgba(255, 220, 70, 0.6)',
   },
@@ -677,6 +800,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 55,
     borderRadius: 50,
+
     backgroundColor:
       'rgba(255,255,255,0.22)',
   },
@@ -697,6 +821,7 @@ const styles = StyleSheet.create({
     width: 420,
     height: 330,
     borderRadius: 220,
+
     backgroundColor: '#397D25',
   },
 
@@ -706,6 +831,7 @@ const styles = StyleSheet.create({
 
   hillRight: {
     right: -170,
+
     backgroundColor: '#2D6F20',
   },
 
@@ -717,9 +843,12 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
 
+  /*
+   * El valor top se establece directamente
+   * en el componente usando insets.top.
+   */
   topBar: {
     position: 'absolute',
-    top: 7,
     left: 15,
     right: 15,
     height: 60,
@@ -736,7 +865,9 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
+
     backgroundColor: '#BF8B25',
+
     borderWidth: 4,
     borderColor: '#8B6017',
   },
@@ -753,6 +884,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 26,
     borderRadius: 22,
+
     borderWidth: 3,
     borderColor: '#397F18',
   },
@@ -771,10 +903,13 @@ const styles = StyleSheet.create({
     height: 51,
     paddingHorizontal: 8,
     borderRadius: 14,
+
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+
     backgroundColor: '#56321B',
+
     borderWidth: 3,
     borderColor: '#8C5C28',
   },
@@ -802,11 +937,14 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 38,
     padding: 0,
+
     shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 10,
     },
+
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 14,
@@ -815,6 +953,7 @@ const styles = StyleSheet.create({
   woodGradient: {
     padding: 9,
     borderRadius: 38,
+
     borderWidth: 3,
     borderColor: '#743B13',
   },
@@ -826,6 +965,7 @@ const styles = StyleSheet.create({
     paddingTop: 43,
     paddingHorizontal: 20,
     borderRadius: 29,
+
     borderWidth: 3,
     borderColor: '#FFE6A6',
   },
@@ -834,13 +974,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -58,
     zIndex: 10,
+
     flexDirection: 'row',
     alignItems: 'center',
+
     shadowColor: '#5D2C00',
+
     shadowOffset: {
       width: 0,
       height: 5,
     },
+
     shadowOpacity: 0.8,
     shadowRadius: 3,
     elevation: 20,
@@ -864,13 +1008,21 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
     marginTop: 4,
+
     textShadowColor:
       'rgba(255,255,255,0.8)',
+
     textShadowOffset: {
       width: 0,
       height: 2,
     },
+
     textShadowRadius: 2,
+  },
+
+  longTitle: {
+    fontSize: 39,
+    lineHeight: 46,
   },
 
   incorrectTitle: {
@@ -919,11 +1071,14 @@ const styles = StyleSheet.create({
     height: 105,
     borderRadius: 53,
     zIndex: 12,
+
     shadowColor: '#143E0E',
+
     shadowOffset: {
       width: 0,
       height: 7,
     },
+
     shadowOpacity: 0.5,
     shadowRadius: 7,
     elevation: 18,
@@ -935,6 +1090,7 @@ const styles = StyleSheet.create({
     borderRadius: 53,
     justifyContent: 'center',
     alignItems: 'center',
+
     borderWidth: 5,
     borderColor: '#337F16',
   },
