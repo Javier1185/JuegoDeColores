@@ -611,40 +611,6 @@ export default function GameScreen({
             </View>
           </View>
         </ScrollView>
-
-        {/* Mensaje de respuesta correcta */}
-        {feedback === 'correct' && (
-          <View
-            style={[
-              styles.feedbackBanner,
-              {
-                backgroundColor:
-                  PALETTE.success,
-              },
-            ]}
-          >
-            <Text style={styles.feedbackText}>
-              ¡Correcto! 🎉
-            </Text>
-          </View>
-        )}
-
-        {/* Mensaje de respuesta incorrecta */}
-        {feedback === 'wrong' && (
-          <View
-            style={[
-              styles.feedbackBanner,
-              {
-                backgroundColor:
-                  PALETTE.error,
-              },
-            ]}
-          >
-            <Text style={styles.feedbackText}>
-              ¡Intenta de nuevo! 💪
-            </Text>
-          </View>
-        )}
       </View>
     </ScreenBackground>
   );
