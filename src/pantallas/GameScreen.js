@@ -27,6 +27,10 @@ import ScreenBackground from '../components/common/ScreenBackground';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_GAP = 16;
 const MAX_CARD_SIZE = 130;
+
+// Máximo de respuestas incorrectas permitidas
+const MAX_INTENTOS_INCORRECTOS = 2;
+
 const CARD_SIZE = Math.min(
   (SCREEN_WIDTH - 32 - GRID_GAP) / 2,
   MAX_CARD_SIZE
@@ -61,11 +65,31 @@ function AnimalCard({ animal, onPress, feedbackState }) {
   useEffect(() => {
     if (feedbackState === 'wrong') {
       Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -7, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 7, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, {
+          toValue: -10,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 10,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: -7,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 7,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 0,
+          duration: 60,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [feedbackState, shakeAnim]);
@@ -153,7 +177,14 @@ function AnimatedButton({ onPress, children, style }) {
       onPressOut={handlePressOut}
       activeOpacity={0.85}
     >
-      <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View
+        style={[
+          style,
+          {
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
         {children}
       </Animated.View>
     </TouchableOpacity>
@@ -166,22 +197,36 @@ function AnimatedButton({ onPress, children, style }) {
 export default function GameScreen({ route, navigation }) {
   const level = route.params?.level ?? 1;
   const initialStars = route.params?.stars ?? 0;
-  // Historial de colores ya pedidos en niveles anteriores
+
+  // Historial de colores usados en niveles anteriores
   const coloresUsados = route.params?.coloresUsados ?? [];
 
-  // Generamos los animales del nivel UNA sola vez (no en cada render)
-  // Le pasamos coloresUsados para que el color objetivo no se repita
-  const nivelData = useRef(generarNivel(level, coloresUsados)).current;
+  // Generamos los animales del nivel una sola vez
+  const nivelData = useRef(
+    generarNivel(level, coloresUsados)
+  ).current;
+
   const animalesDelNivel = nivelData.animalesIds
     .map((id) => getAnimalById(id))
     .filter(Boolean);
 
-  const animalObjetivo = getAnimalById(nivelData.targetAnimalId);
-  const colorObjetivo = getColorById(animalObjetivo?.colorId);
+  const animalObjetivo = getAnimalById(
+    nivelData.targetAnimalId
+  );
+
+  const colorObjetivo = getColorById(
+    animalObjetivo?.colorId
+  );
 
   const [stars, setStars] = useState(initialStars);
   const [feedback, setFeedback] = useState(null);
   const [pressedId, setPressedId] = useState(null);
+
+  // Contador de respuestas incorrectas
+  const [
+    intentosIncorrectos,
+    setIntentosIncorrectos,
+  ] = useState(0);
 
   const soundRef = useRef(null);
 
@@ -191,136 +236,258 @@ export default function GameScreen({ route, navigation }) {
         await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
-      const { sound } = await Audio.Sound.createAsync(soundAsset);
+
+      const { sound } = await Audio.Sound.createAsync(
+        soundAsset
+      );
+
       soundRef.current = sound;
+
       await sound.playAsync();
     } catch (error) {
-      console.warn('Error reproduciendo audio:', error);
+      console.warn(
+        'Error reproduciendo audio:',
+        error
+      );
     }
   }, []);
 
-  // Solo limpiamos el sonido al salir — ya NO reproducimos nada al entrar.
-  // El audio del color se reproduce ÚNICAMENTE cuando el niño
-  // presiona el botón de bocina (🔊).
+  // Limpiar el sonido al salir
   useEffect(() => {
     return () => {
       soundRef.current?.unloadAsync();
     };
   }, []);
 
-  // Se ejecuta SOLO al presionar el botón de bocina
+  // Reproduce el audio del color cuando se presiona la bocina
   const handleReplayAudio = () => {
-    if (colorObjetivo?.audio) playSound(colorObjetivo.audio);
+    if (colorObjetivo?.audio) {
+      playSound(colorObjetivo.audio);
+    }
   };
 
+  // -----------------------------------------------------------------
+  // Validación de la respuesta
+  // -----------------------------------------------------------------
   const handleAnimalPress = (animal) => {
+    // Bloquea temporalmente los demás animales
     if (feedback) return;
 
     setPressedId(animal.id);
 
+    // ---------------------------------------------------------------
+    // RESPUESTA CORRECTA
+    // ---------------------------------------------------------------
     if (animal.id === animalObjetivo?.id) {
       const newStars = stars + 1;
+
       setStars(newStars);
+      setIntentosIncorrectos(0);
       setFeedback('correct');
+
       playSound(EFFECTS.correct);
 
-      // Agregamos el color de este nivel al historial para que
-      // el siguiente nivel no lo repita como objetivo
+      // Agrega el color al historial
       const nuevosColoresUsados = [
         ...coloresUsados,
         nivelData.colorId,
       ].filter(Boolean);
 
       setTimeout(() => {
-        navigation.navigate(SCREENS.LEVEL_COMPLETE, {
-          level,
-          stars: newStars,
-          isLastLevel: level >= TOTAL_NIVELES,
-          coloresUsados: nuevosColoresUsados, // historial actualizado
-        });
+        navigation.navigate(
+          SCREENS.LEVEL_COMPLETE,
+          {
+            level,
+            stars: newStars,
+            isLastLevel:
+              level >= TOTAL_NIVELES,
+            coloresUsados:
+              nuevosColoresUsados,
+
+            // Mostrará el niño feliz
+            resultado: 'correcto',
+
+            colorCorrecto:
+              colorObjetivo?.label ??
+              nivelData.colorId,
+          }
+        );
       }, 1000);
-    } else {
-      setFeedback('wrong');
-      playSound(EFFECTS.wrong);
+
+      return;
+    }
+
+    // ---------------------------------------------------------------
+    // RESPUESTA INCORRECTA
+    // ---------------------------------------------------------------
+    const nuevosIntentos =
+      intentosIncorrectos + 1;
+
+    setIntentosIncorrectos(nuevosIntentos);
+    setFeedback('wrong');
+
+    playSound(EFFECTS.wrong);
+
+    // Si se equivocó dos veces, muestra al niño triste
+    if (
+      nuevosIntentos >=
+      MAX_INTENTOS_INCORRECTOS
+    ) {
       setTimeout(() => {
+        // Limpia el estado de la pantalla
         setFeedback(null);
         setPressedId(null);
+        setIntentosIncorrectos(0);
+
+        navigation.navigate(
+          SCREENS.LEVEL_COMPLETE,
+          {
+            level,
+            stars,
+            isLastLevel:
+              level >= TOTAL_NIVELES,
+
+            // No se agrega el color porque no acertó
+            coloresUsados,
+
+            // Mostrará el niño triste
+            resultado: 'incorrecto',
+
+            colorCorrecto:
+              colorObjetivo?.label ??
+              nivelData.colorId,
+          }
+        );
       }, 1000);
+
+      return;
     }
+
+    // En el primer error permite intentar nuevamente
+    setTimeout(() => {
+      setFeedback(null);
+      setPressedId(null);
+    }, 1000);
   };
 
   if (!colorObjetivo || !animalObjetivo) {
     return (
       <View style={styles.errorContainer}>
-        <Text>Error cargando nivel. Vuelve al inicio.</Text>
+        <Text>
+          Error cargando nivel. Vuelve al inicio.
+        </Text>
       </View>
     );
   }
 
   return (
     <ScreenBackground
-      source={require('../../assets/images/backgrounds/home-background.jpeg')}
+      source={require(
+        '../../assets/images/backgrounds/home-background.jpeg'
+      )}
     >
       <View style={styles.container}>
         {/* Encabezado */}
         <View style={styles.header}>
           <AnimatedButton
-            onPress={() => navigation.navigate(SCREENS.HOME)}
+            onPress={() =>
+              navigation.navigate(SCREENS.HOME)
+            }
             style={styles.iconButton}
           >
-            <Text style={styles.headerIcon}>🏠</Text>
+            <Text style={styles.headerIcon}>
+              🏠
+            </Text>
           </AnimatedButton>
 
-          <Text style={styles.levelText}>Nivel {level}</Text>
+          <Text style={styles.levelText}>
+            Nivel {level}
+          </Text>
 
           <View style={styles.starsContainer}>
-            <Text style={styles.starsText}>⭐ {stars}</Text>
+            <Text style={styles.starsText}>
+              ⭐ {stars}
+            </Text>
           </View>
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={
+            styles.scrollContent
+          }
           showsVerticalScrollIndicator={false}
         >
-          {/* Banner del color pedido */}
+          {/* Banner del color solicitado */}
           <View style={styles.promptBanner}>
             <AnimatedButton
               onPress={handleReplayAudio}
               style={styles.speakerButton}
             >
-              <Text style={styles.speakerIcon}>🔊</Text>
+              <Text style={styles.speakerIcon}>
+                🔊
+              </Text>
             </AnimatedButton>
 
             <Text style={styles.promptText}>
               Toca el animal{' '}
-              <Text style={{ color: colorObjetivo.hex }}>
+              <Text
+                style={{
+                  color: colorObjetivo.hex,
+                }}
+              >
                 {colorObjetivo.label}
               </Text>
             </Text>
           </View>
 
-          {/* Grid de animales */}
+          {/* Animales */}
           <View style={styles.animalsGrid}>
             {animalesDelNivel.map((animal) => (
               <AnimalCard
                 key={animal.id}
                 animal={animal}
                 onPress={handleAnimalPress}
-                feedbackState={pressedId === animal.id ? feedback : null}
+                feedbackState={
+                  pressedId === animal.id
+                    ? feedback
+                    : null
+                }
               />
             ))}
           </View>
         </ScrollView>
 
-        {/* Feedback */}
+        {/* Mensaje de respuesta correcta */}
         {feedback === 'correct' && (
-          <View style={[styles.feedbackBanner, { backgroundColor: PALETTE.success }]}>
-            <Text style={styles.feedbackText}>¡Correcto! 🎉</Text>
+          <View
+            style={[
+              styles.feedbackBanner,
+              {
+                backgroundColor:
+                  PALETTE.success,
+              },
+            ]}
+          >
+            <Text style={styles.feedbackText}>
+              ¡Correcto! 🎉
+            </Text>
           </View>
         )}
+
+        {/* Mensaje de respuesta incorrecta */}
         {feedback === 'wrong' && (
-          <View style={[styles.feedbackBanner, { backgroundColor: PALETTE.error }]}>
-            <Text style={styles.feedbackText}>¡Intenta de nuevo! 💪</Text>
+          <View
+            style={[
+              styles.feedbackBanner,
+              {
+                backgroundColor:
+                  PALETTE.error,
+              },
+            ]}
+          >
+            <Text style={styles.feedbackText}>
+              ¡Intenta de nuevo! 💪
+            </Text>
           </View>
         )}
       </View>
@@ -333,11 +500,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 50,
   },
+
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -345,6 +514,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16,
   },
+
   iconButton: {
     backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 24,
@@ -353,56 +523,75 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
   },
+
   headerIcon: {
     fontSize: 24,
   },
+
   levelText: {
     fontSize: FONT_SIZES.body,
     fontWeight: '700',
     color: PALETTE.textDark,
-    backgroundColor: 'rgba(255,255,255,0.75)',
+    backgroundColor:
+      'rgba(255,255,255,0.75)',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 12,
   },
+
   starsContainer: {
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor:
+      'rgba(255,255,255,0.85)',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
   },
+
   starsText: {
     fontSize: FONT_SIZES.body,
     fontWeight: '700',
     color: PALETTE.woodBrownDark,
   },
+
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
   },
+
   promptBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor:
+      'rgba(255,255,255,0.92)',
     borderRadius: 20,
     padding: 16,
     marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
   },
+
   speakerButton: {
     backgroundColor: PALETTE.skyBlue,
     borderRadius: 22,
@@ -412,47 +601,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
+
   speakerIcon: {
     fontSize: 20,
   },
+
   promptText: {
     fontSize: FONT_SIZES.subtitle,
     fontWeight: '700',
     color: PALETTE.textDark,
     flex: 1,
   },
+
   animalsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: GRID_GAP,
   },
+
   cardShadowWrapper: {
     borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
   },
+
   animalCard: {
     width: CARD_SIZE,
     height: CARD_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   animalCardImage: {
     resizeMode: 'contain',
   },
+
   animalImage: {
     width: '70%',
     height: '70%',
   },
+
   feedbackBanner: {
     position: 'absolute',
     bottom: 24,
@@ -462,6 +665,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
   },
+
   feedbackText: {
     color: PALETTE.textLight,
     fontSize: FONT_SIZES.subtitle,

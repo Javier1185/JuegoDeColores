@@ -1,389 +1,924 @@
-/**
- * LevelCompleteScreen.js
- * -----------------------------------------------------------------------
- * Pantalla de felicitación al completar un nivel.
- *  - Fondo: degradado oscuro azul/morado (más elegante que negro puro)
- *  - Tarjeta: blanca con borde dorado animado + confeti cayendo
- *  - Botón: textura de madera verde (igual que "Jugar" en Home)
- *  - Estrellas: aparecen en secuencia con efecto pop
- *  - Tarjeta: animación de entrada pop+fade
- * -----------------------------------------------------------------------
- */
+import React, { useEffect, useRef } from 'react';
 
-import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { SCREENS } from '../navegacion/AppNavigator';
-import { PALETTE, FONT_SIZES } from '../styles/tema';
-import StarsAnimated from '../components/feedback/StarsAnimated';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Imágenes del niño
+import NinoImage from '../../assets/images/niño/niño.png';
+import NinoTristeImage from '../../assets/images/niño/niño_triste.png';
 
-// -----------------------------------------------------------------
-// Pieza de confeti individual
-// -----------------------------------------------------------------
-const CONFETTI_COLORS = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+/*
+|--------------------------------------------------------------------------
+| Colores del texto
+|--------------------------------------------------------------------------
+*/
 
-function ConfettiPiece({ color, startX, delay, duration, size }) {
-  const fallAnim = useRef(new Animated.Value(0)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const swayAnim = useRef(new Animated.Value(0)).current;
+const COLOR_HEX = {
+  ROJO: '#E53935',
+  AZUL: '#1687D9',
+  AMARILLO: '#F6C900',
+  VERDE: '#43A047',
+  NARANJA: '#FB8C00',
+  MORADO: '#8E44AD',
+  VIOLETA: '#8E44AD',
+  ROSADO: '#EC407A',
+};
 
-  useEffect(() => {
-    // Caída principal
-    Animated.timing(fallAnim, {
-      toValue: 1,
-      duration,
-      delay,
-      useNativeDriver: true,
-    }).start();
+/*
+|--------------------------------------------------------------------------
+| Posiciones del confeti
+|--------------------------------------------------------------------------
+*/
 
-    // Rotación continua
-    Animated.loop(
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 600 + Math.random() * 400,
-        useNativeDriver: true,
-      })
-    ).start();
+const CONFETTI = [
+  {
+    top: '7%',
+    left: '8%',
+    color: '#FF4081',
+    rotate: '40deg',
+  },
+  {
+    top: '13%',
+    left: '20%',
+    color: '#FFD600',
+    rotate: '-20deg',
+  },
+  {
+    top: '5%',
+    left: '29%',
+    color: '#FF4FA3',
+    rotate: '-30deg',
+  },
+  {
+    top: '8%',
+    right: '29%',
+    color: '#42A5F5',
+    rotate: '20deg',
+  },
+  {
+    top: '13%',
+    right: '18%',
+    color: '#FFCA28',
+    rotate: '45deg',
+  },
+  {
+    top: '20%',
+    right: '6%',
+    color: '#AB47BC',
+    rotate: '-20deg',
+  },
+  {
+    top: '31%',
+    left: '5%',
+    color: '#29B6F6',
+    rotate: '40deg',
+  },
+  {
+    top: '40%',
+    right: '4%',
+    color: '#FFEB3B',
+    rotate: '-30deg',
+  },
+  {
+    top: '52%',
+    left: '6%',
+    color: '#FF5252',
+    rotate: '30deg',
+  },
+  {
+    top: '59%',
+    right: '8%',
+    color: '#26C6DA',
+    rotate: '-25deg',
+  },
+  {
+    top: '74%',
+    left: '5%',
+    color: '#66BB6A',
+    rotate: '40deg',
+  },
+  {
+    top: '79%',
+    right: '5%',
+    color: '#FFCA28',
+    rotate: '25deg',
+  },
+  {
+    bottom: '8%',
+    left: '14%',
+    color: '#FF4081',
+    rotate: '-35deg',
+  },
+  {
+    bottom: '5%',
+    right: '16%',
+    color: '#29B6F6',
+    rotate: '30deg',
+  },
+];
 
-    // Movimiento lateral suave (balanceo)
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(swayAnim, {
-          toValue: 1,
-          duration: 800 + Math.random() * 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(swayAnim, {
-          toValue: -1,
-          duration: 800 + Math.random() * 400,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
+/*
+|--------------------------------------------------------------------------
+| Pantalla de nivel completado
+|--------------------------------------------------------------------------
+*/
 
-  const translateY = fallAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-20, SCREEN_HEIGHT * 0.75],
-  });
+export default function LevelCompleteScreen({
+  route,
+  navigation,
+}) {
+  const { height } = useWindowDimensions();
 
-  const opacity = fallAnim.interpolate({
-    inputRange: [0, 0.7, 1],
-    outputRange: [1, 1, 0],
-  });
+  const {
+    level = 1,
+    stars = 0,
+    isLastLevel = false,
+    coloresUsados = [],
 
-  const rotate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+    // Información enviada desde GameScreen
+    resultado = 'correcto',
+    colorCorrecto = '',
+  } = route.params ?? {};
 
-  const translateX = swayAnim.interpolate({
-    inputRange: [-1, 1],
-    outputRange: [-15, 15],
-  });
+  /*
+   * Si resultado es "correcto", muestra el niño feliz.
+   * Si resultado es "incorrecto", muestra el niño triste.
+   */
+  const esCorrecto = resultado === 'correcto';
 
-  // Alternar entre círculo y cuadrado para más variedad
-  const isCircle = Math.random() > 0.5;
-
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        left: startX,
-        top: 0,
-        width: size,
-        height: size,
-        backgroundColor: color,
-        borderRadius: isCircle ? size / 2 : 2,
-        opacity,
-        transform: [{ translateY }, { translateX }, { rotate }],
-      }}
-    />
-  );
-}
-
-// -----------------------------------------------------------------
-// Efecto de confeti completo
-// -----------------------------------------------------------------
-function ConfettiEffect() {
-  const pieces = useRef(
-    Array.from({ length: 22 }, (_, i) => ({
-      key: i,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      startX: Math.random() * SCREEN_WIDTH,
-      delay: Math.random() * 600,
-      duration: 1800 + Math.random() * 1200,
-      size: 7 + Math.random() * 7,
-    }))
+  const scaleAnim = useRef(
+    new Animated.Value(0.6)
   ).current;
 
-  return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      {pieces.map((p) => (
-        <ConfettiPiece key={p.key} {...p} />
-      ))}
-    </View>
-  );
-}
+  const opacityAnim = useRef(
+    new Animated.Value(0)
+  ).current;
 
-// -----------------------------------------------------------------
-// Botón con textura de madera verde (igual que "Jugar" en Home)
-// -----------------------------------------------------------------
-function WoodButtonGreen({ label, onPress }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const translateYAnim = useRef(new Animated.Value(0)).current;
+  const floatingAnim = useRef(
+    new Animated.Value(0)
+  ).current;
 
-  const handlePressIn = () => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, speed: 50, bounciness: 0 }),
-      Animated.timing(translateYAnim, { toValue: 3, duration: 80, useNativeDriver: true }),
-    ]).start();
-  };
+  /*
+   * Obtiene el color enviado desde GameScreen.
+   * Si no llega, utiliza el último color guardado.
+   */
+  const ultimoColor = String(
+    colorCorrecto ||
+      (coloresUsados.length > 0
+        ? coloresUsados[
+            coloresUsados.length - 1
+          ]
+        : 'AZUL')
+  ).toUpperCase();
 
-  const handlePressOut = () => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 10 }),
-      Animated.timing(translateYAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-    ]).start();
-  };
+  const colorEncontrado =
+    COLOR_HEX[ultimoColor] || '#1687D9';
 
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      activeOpacity={0.85}
-      style={styles.woodBtnTouchable}
-    >
-      <Animated.View
-        style={[
-          styles.woodBtnWrapper,
-          { transform: [{ scale: scaleAnim }, { translateY: translateYAnim }] },
-        ]}
-      >
-        <View style={styles.woodBtnShadow} />
-        <LinearGradient
-          colors={['#5FD97A', '#3BAE52', '#2D8C40']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.woodBtnGradient}
-        >
-          <View style={[styles.veta, { top: '20%', opacity: 0.08 }]} />
-          <View style={[styles.veta, { top: '50%', opacity: 0.06 }]} />
-          <View style={[styles.veta, { top: '75%', opacity: 0.05 }]} />
-          <LinearGradient
-            colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.woodBtnGloss}
-          />
-          <Text style={styles.woodBtnText}>{label}</Text>
-        </LinearGradient>
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
-
-// -----------------------------------------------------------------
-// Pantalla principal
-// -----------------------------------------------------------------
-export default function LevelCompleteScreen({ route, navigation }) {
-  const { level, stars = 0, isLastLevel = false, coloresUsados = [] } =
-    route.params ?? {};
-
-  const scaleAnim = useRef(new Animated.Value(0.5)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const borderAnim = useRef(new Animated.Value(0)).current;
+  /*
+  |--------------------------------------------------------------------------
+  | Animaciones
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
-    // Animación de entrada de la tarjeta
     Animated.parallel([
       Animated.spring(scaleAnim, {
         toValue: 1,
+        speed: 9,
+        bounciness: 13,
         useNativeDriver: true,
-        speed: 10,
-        bounciness: 12,
       }),
+
       Animated.timing(opacityAnim, {
         toValue: 1,
-        duration: 350,
+        duration: 400,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // Pulso del borde dorado
-    Animated.loop(
+    const floatingAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(borderAnim, { toValue: 1, duration: 1000, useNativeDriver: false }),
-        Animated.timing(borderAnim, { toValue: 0, duration: 1000, useNativeDriver: false }),
-      ])
-    ).start();
-  }, []);
+        Animated.timing(floatingAnim, {
+          toValue: -7,
+          duration: 850,
+          useNativeDriver: true,
+        }),
 
-  const borderColor = borderAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['#FFD700', '#FFF176'],
-  });
+        Animated.timing(floatingAnim, {
+          toValue: 0,
+          duration: 850,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    floatingAnimation.start();
+
+    return () => {
+      floatingAnimation.stop();
+    };
+  }, [
+    floatingAnim,
+    opacityAnim,
+    scaleAnim,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Continuar o volver a intentar
+  |--------------------------------------------------------------------------
+  */
 
   const handleContinue = () => {
-    if (isLastLevel) {
-      navigation.navigate(SCREENS.GAME_FINISHED, { stars });
-    } else {
-      navigation.navigate(SCREENS.GAME, {
-        level: level + 1,
+    /*
+     * Si se equivocó dos veces, vuelve a crear
+     * el mismo nivel con las mismas estrellas.
+     */
+    if (!esCorrecto) {
+      navigation.replace(SCREENS.GAME, {
+        level,
         stars,
-        coloresUsados, // historial de colores para no repetir
+        coloresUsados,
       });
+
+      return;
+    }
+
+    /*
+     * Si respondió correctamente y es el último
+     * nivel, abre el resultado final.
+     */
+    if (isLastLevel) {
+      navigation.navigate(
+        SCREENS.GAME_FINISHED,
+        {
+          stars,
+          coloresUsados,
+        }
+      );
+
+      return;
+    }
+
+    /*
+     * Si respondió correctamente y todavía
+     * quedan niveles, avanza al siguiente.
+     */
+    navigation.navigate(SCREENS.GAME, {
+      level: level + 1,
+      stars,
+      coloresUsados,
+    });
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Regresar al inicio
+  |--------------------------------------------------------------------------
+  */
+
+  const handleHome = () => {
+    if (SCREENS.HOME) {
+      navigation.navigate(SCREENS.HOME);
+    } else {
+      navigation.goBack();
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Fondo: degradado oscuro azul-morado */}
+      {/* Fondo del paisaje */}
       <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f3460']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={[
+          '#2196B0',
+          '#73C269',
+          '#3E7E26',
+        ]}
+        locations={[0, 0.58, 1]}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Confeti cayendo por encima del fondo pero debajo de la tarjeta */}
-      <ConfettiEffect />
+      {/* Sol */}
+      <View style={styles.sun} />
 
-      {/* Tarjeta central */}
+      {/* Nubes */}
+      <View
+        style={[
+          styles.cloud,
+          styles.cloudLeft,
+        ]}
+      />
+
+      <View
+        style={[
+          styles.cloud,
+          styles.cloudRight,
+        ]}
+      />
+
+      {/* Colinas */}
+      <View
+        style={[
+          styles.hill,
+          styles.hillLeft,
+        ]}
+      />
+
+      <View
+        style={[
+          styles.hill,
+          styles.hillRight,
+        ]}
+      />
+
+      {/* Capa oscura */}
+      <View style={styles.backgroundOverlay} />
+
+      {/* El confeti solo aparece al acertar */}
+      {esCorrecto &&
+        CONFETTI.map((item, index) => (
+          <View
+            key={index}
+            style={[
+              styles.confetti,
+              item,
+              {
+                backgroundColor: item.color,
+                transform: [
+                  {
+                    rotate: item.rotate,
+                  },
+                ],
+              },
+            ]}
+          />
+        ))}
+
+      {/* Barra superior */}
+      <View style={styles.topBar}>
+        {/* Botón de inicio */}
+        <TouchableOpacity
+          style={styles.homeButton}
+          onPress={handleHome}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.homeIcon}>
+            ⌂
+          </Text>
+        </TouchableOpacity>
+
+        {/* Encabezado dinámico */}
+        <LinearGradient
+          colors={
+            esCorrecto
+              ? ['#79C43B', '#3D941D']
+              : ['#FF9F43', '#E85D35']
+          }
+          style={styles.levelHeader}
+        >
+          <Text
+            style={styles.levelHeaderText}
+          >
+            {esCorrecto
+              ? `NIVEL ${level} COMPLETADO`
+              : 'INTÉNTALO DE NUEVO'}
+          </Text>
+        </LinearGradient>
+
+        {/* Estrellas acumuladas */}
+        <View style={styles.scoreContainer}>
+          <Text style={styles.scoreStar}>
+            ⭐
+          </Text>
+
+          <Text style={styles.scoreText}>
+            {stars}
+          </Text>
+        </View>
+      </View>
+
+      {/* Contenido central */}
       <Animated.View
         style={[
-          styles.cardWrapper,
-          { opacity: opacityAnim, transform: [{ scale: scaleAnim }] },
+          styles.celebrationWrapper,
+          {
+            opacity: opacityAnim,
+            transform: [
+              {
+                scale: scaleAnim,
+              },
+            ],
+          },
         ]}
       >
-        <Animated.View style={[styles.card, { borderColor }]}>
-          {/* Borde interior dorado brillante */}
+        {/* Tarjeta principal */}
+        <View style={styles.woodBorder}>
           <LinearGradient
-            colors={['rgba(255,215,0,0.15)', 'rgba(255,215,0,0.05)']}
-            style={StyleSheet.absoluteFillObject}
-          />
+            colors={[
+              '#D18A38',
+              '#8B4B19',
+              '#C97627',
+            ]}
+            start={{
+              x: 0,
+              y: 0,
+            }}
+            end={{
+              x: 1,
+              y: 1,
+            }}
+            style={styles.woodGradient}
+          >
+            <LinearGradient
+              colors={[
+                '#FFFDF1',
+                '#FFF3CE',
+              ]}
+              style={styles.paperCard}
+            >
+              {/* Título dinámico */}
+              <Text
+                style={[
+                  styles.title,
+                  !esCorrecto &&
+                    styles.incorrectTitle,
+                ]}
+              >
+                {esCorrecto
+                  ? '¡Excelente!'
+                  : '¡Oh, no!'}
+              </Text>
 
-          <StarsAnimated earnedCount={3} size={52} />
+              {/* Subtítulo dinámico */}
+              <Text style={styles.subtitle}>
+                {esCorrecto
+                  ? '¡Muy bien hecho!'
+                  : 'No fue esta vez'}
+              </Text>
 
-          <Text style={styles.title}>¡Excelente!</Text>
-          <Text style={styles.subtitle}>Nivel {level} completado</Text>
-          <Text style={styles.starsCount}>⭐ {stars} {stars === 1 ? 'estrella' : 'estrellas'}</Text>
+              {/* Mensaje dinámico */}
+              {esCorrecto ? (
+                <Text
+                  style={
+                    styles.colorSentence
+                  }
+                >
+                  Encontraste el color{' '}
+                  <Text
+                    style={[
+                      styles.colorName,
+                      {
+                        color:
+                          colorEncontrado,
+                      },
+                    ]}
+                  >
+                    {ultimoColor}
+                  </Text>
+                  .
+                </Text>
+              ) : (
+                <Text
+                  style={
+                    styles.colorSentence
+                  }
+                >
+                  Te equivocaste dos veces.
+                  {'\n'}
+                  ¡Puedes intentarlo
+                  nuevamente!
+                </Text>
+              )}
 
-          <WoodButtonGreen
-            label={isLastLevel ? 'Ver resultado final' : 'Siguiente Nivel →'}
-            onPress={handleContinue}
-          />
-        </Animated.View>
+              {/* Imagen dinámica */}
+              <View
+                style={[
+                  styles.characterContainer,
+                  {
+                    height:
+                      height < 700
+                        ? 220
+                        : 285,
+                  },
+                ]}
+              >
+                <Image
+                  source={
+                    esCorrecto
+                      ? NinoImage
+                      : NinoTristeImage
+                  }
+                  style={
+                    styles.characterImage
+                  }
+                  resizeMode="contain"
+                />
+              </View>
+            </LinearGradient>
+          </LinearGradient>
+        </View>
+
+        {/* Estrellas superiores */}
+        {esCorrecto && (
+          <Animated.View
+            style={[
+              styles.starsRow,
+              {
+                transform: [
+                  {
+                    translateY:
+                      floatingAnim,
+                  },
+                ],
+              },
+            ]}
+          >
+            <Text style={styles.sideStar}>
+              ⭐
+            </Text>
+
+            <Text style={styles.mainStar}>
+              ⭐
+            </Text>
+
+            <Text style={styles.sideStar}>
+              ⭐
+            </Text>
+          </Animated.View>
+        )}
+
+        {/* Botón inferior */}
+        <TouchableOpacity
+          style={[
+            styles.continueButtonContainer,
+            !esCorrecto &&
+              styles.retryButtonContainer,
+          ]}
+          onPress={handleContinue}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={
+              esCorrecto
+                ? ['#8BD331', '#3E9D16']
+                : ['#FF9F43', '#E85D35']
+            }
+            style={[
+              styles.continueButton,
+              !esCorrecto &&
+                styles.retryButton,
+            ]}
+          >
+            {esCorrecto ? (
+              <Text
+                style={styles.continueStar}
+              >
+                ⭐
+              </Text>
+            ) : (
+              <Text style={styles.retryText}>
+                ↻ Reintentar
+              </Text>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
       </Animated.View>
     </View>
   );
 }
+
+/*
+|--------------------------------------------------------------------------
+| Estilos
+|--------------------------------------------------------------------------
+*/
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  cardWrapper: {
-    width: '88%',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    padding: 28,
-    alignItems: 'center',
-    borderWidth: 3,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 16,
     overflow: 'hidden',
-  },
-  title: {
-    fontSize: FONT_SIZES.title,
-    fontWeight: '800',
-    color: '#2D8C40',
-    marginBottom: 6,
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  subtitle: {
-    fontSize: FONT_SIZES.body,
-    color: PALETTE.textDark,
-    marginBottom: 4,
-    fontWeight: '600',
-  },
-  starsCount: {
-    fontSize: FONT_SIZES.subtitle,
-    fontWeight: '700',
-    color: '#E6A800',
-    marginBottom: 24,
+    paddingHorizontal: 18,
+    paddingTop: 75,
+    paddingBottom: 45,
   },
 
-  // Botón madera verde
-  woodBtnTouchable: {
-    width: '100%',
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor:
+      'rgba(13, 57, 44, 0.28)',
   },
-  woodBtnWrapper: {
-    width: '100%',
-    borderRadius: 16,
-  },
-  woodBtnShadow: {
+
+  sun: {
     position: 'absolute',
-    bottom: -5,
-    left: 4,
-    right: 4,
-    height: '100%',
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: -1,
+    top: 75,
+    right: 35,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor:
+      'rgba(255, 220, 70, 0.6)',
   },
-  woodBtnGradient: {
-    borderRadius: 16,
-    paddingVertical: 16,
+
+  cloud: {
+    position: 'absolute',
+    width: 160,
+    height: 55,
+    borderRadius: 50,
+    backgroundColor:
+      'rgba(255,255,255,0.22)',
+  },
+
+  cloudLeft: {
+    top: 105,
+    left: -25,
+  },
+
+  cloudRight: {
+    top: 165,
+    right: -35,
+  },
+
+  hill: {
+    position: 'absolute',
+    bottom: -130,
+    width: 420,
+    height: 330,
+    borderRadius: 220,
+    backgroundColor: '#397D25',
+  },
+
+  hillLeft: {
+    left: -180,
+  },
+
+  hillRight: {
+    right: -170,
+    backgroundColor: '#2D6F20',
+  },
+
+  confetti: {
+    position: 'absolute',
+    width: 15,
+    height: 27,
+    borderRadius: 4,
+    zIndex: 3,
+  },
+
+  topBar: {
+    position: 'absolute',
+    top: 7,
+    left: 15,
+    right: 15,
+    height: 60,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 20,
+  },
+
+  homeButton: {
+    position: 'absolute',
+    left: 0,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#BF8B25',
+    borderWidth: 4,
+    borderColor: '#8B6017',
+  },
+
+  homeIcon: {
+    color: '#FFF1B0',
+    fontSize: 35,
+    fontWeight: '900',
+    lineHeight: 38,
+  },
+
+  levelHeader: {
+    minWidth: 230,
+    paddingVertical: 10,
+    paddingHorizontal: 26,
+    borderRadius: 22,
+    borderWidth: 3,
+    borderColor: '#397F18',
+  },
+
+  levelHeaderText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+
+  scoreContainer: {
+    position: 'absolute',
+    right: 0,
+    minWidth: 68,
+    height: 51,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#56321B',
+    borderWidth: 3,
+    borderColor: '#8C5C28',
+  },
+
+  scoreStar: {
+    fontSize: 23,
+    marginRight: 2,
+  },
+
+  scoreText: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+
+  celebrationWrapper: {
+    width: '100%',
+    maxWidth: 530,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+  },
+
+  woodBorder: {
+    width: '100%',
+    borderRadius: 38,
+    padding: 0,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 14,
+  },
+
+  woodGradient: {
+    padding: 9,
+    borderRadius: 38,
+    borderWidth: 3,
+    borderColor: '#743B13',
+  },
+
+  paperCard: {
+    minHeight: 485,
+    alignItems: 'center',
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.2)',
+    paddingTop: 43,
+    paddingHorizontal: 20,
+    borderRadius: 29,
+    borderWidth: 3,
+    borderColor: '#FFE6A6',
   },
-  woodBtnGloss: {
+
+  starsRow: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    top: -58,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#5D2C00',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+    elevation: 20,
   },
-  veta: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: '#000',
+
+  sideStar: {
+    fontSize: 70,
+    marginHorizontal: -9,
   },
-  woodBtnText: {
-    color: '#FFF',
-    fontSize: FONT_SIZES.button,
+
+  mainStar: {
+    fontSize: 95,
+    marginHorizontal: -9,
+    zIndex: 2,
+  },
+
+  title: {
+    color: '#319522',
+    fontSize: 48,
+    lineHeight: 58,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginTop: 4,
+    textShadowColor:
+      'rgba(255,255,255,0.8)',
+    textShadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    textShadowRadius: 2,
+  },
+
+  incorrectTitle: {
+    color: '#E85D35',
+  },
+
+  subtitle: {
+    color: '#1E1E1E',
+    fontSize: 25,
+    lineHeight: 31,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginTop: 1,
+  },
+
+  colorSentence: {
+    color: '#111111',
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '700',
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    marginTop: 2,
+  },
+
+  colorName: {
+    fontWeight: '900',
+  },
+
+  characterContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    overflow: 'hidden',
+    marginTop: 6,
+  },
+
+  characterImage: {
+    width: '94%',
+    height: '100%',
+  },
+
+  continueButtonContainer: {
+    position: 'absolute',
+    bottom: -46,
+    width: 105,
+    height: 105,
+    borderRadius: 53,
+    zIndex: 12,
+    shadowColor: '#143E0E',
+    shadowOffset: {
+      width: 0,
+      height: 7,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 7,
+    elevation: 18,
+  },
+
+  continueButton: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 53,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 5,
+    borderColor: '#337F16',
+  },
+
+  continueStar: {
+    fontSize: 58,
+  },
+
+  retryButtonContainer: {
+    bottom: -35,
+    width: 190,
+    height: 70,
+    borderRadius: 35,
+  },
+
+  retryButton: {
+    borderRadius: 35,
+    borderColor: '#B73C21',
+  },
+
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '900',
+    textAlign: 'center',
   },
 });
