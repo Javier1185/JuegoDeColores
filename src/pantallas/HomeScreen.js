@@ -20,81 +20,82 @@ import { reproducirSonidoBoton } from '../utils/sonidoBoton';
 
 function WoodButton({ label, onPress, colors }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const translateYAnim = useRef(new Animated.Value(0)).current;
 
-  const handlePressIn = () => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 0.96,
-        useNativeDriver: true,
-        speed: 50,
-        bounciness: 0,
-      }),
-      Animated.timing(translateYAnim, {
-        toValue: 3,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const getIcon = () => {
+    switch (label) {
+      case 'Jugar':
+        return '▶';
+      case 'Cómo jugar':
+        return '';
+      case 'Créditos':
+        return '';
+      case 'Configuración':
+        return '⚙';
+      default:
+        return '';
+    }
   };
 
-  const handlePressOut = () => {
-    Animated.parallel([
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.spring(scaleAnim, {
+        toValue: 0.92,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1.06,
+        friction: 3,
+        useNativeDriver: true,
+      }),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        useNativeDriver: true,
-        speed: 50,
-        bounciness: 10,
-      }),
-      Animated.timing(translateYAnim, {
-        toValue: 0,
-        duration: 100,
+        friction: 5,
         useNativeDriver: true,
       }),
     ]).start();
-  };
 
-  const handlePress = (event) => {
     reproducirSonidoBoton();
-    onPress?.(event);
+    onPress?.();
   };
 
   return (
     <TouchableOpacity
+      activeOpacity={0.9}
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      activeOpacity={0.85}
-      style={styles.woodButtonTouchable}
+      style={styles.buttonTouchable}
     >
       <Animated.View
         style={[
-          styles.woodButtonWrapper,
+          styles.buttonOuter,
           {
-            transform: [
-              { scale: scaleAnim },
-              { translateY: translateYAnim },
-            ],
+            transform: [{ scale: scaleAnim }],
           },
         ]}
       >
-        <View style={styles.woodButtonShadowBottom} />
+        {/* Sombra */}
+
+        <View style={styles.buttonShadow} />
+
+        {/* Botón */}
+
         <LinearGradient
           colors={colors}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={styles.woodButtonGradient}
+          style={styles.button}
         >
-          <View style={[styles.veta, { top: '20%', opacity: 0.08 }]} />
-          <View style={[styles.veta, { top: '45%', opacity: 0.06 }]} />
-          <View style={[styles.veta, { top: '70%', opacity: 0.05 }]} />
-          <LinearGradient
-            colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.woodButtonGloss}
-          />
-          <Text style={styles.woodButtonText}>{label}</Text>
+          {/* brillo */}
+
+          <View style={styles.buttonLight} />
+
+          {/* hojas */}
+
+          <Text style={styles.leafLeft}></Text>
+          <Text style={styles.leafRight}></Text>
+
+          <Text style={styles.buttonText}>
+            {getIcon()}   {label}
+          </Text>
         </LinearGradient>
       </Animated.View>
     </TouchableOpacity>
@@ -115,23 +116,23 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.buttonsContainer}>
           <WoodButton
-            label="Jugar"
-            colors={['#5FD97A', '#3BAE52', '#2D8C40']}
+             label="Jugar"
+    colors={['#72F15A','#41C93B','#239F2D']}
             onPress={() => navigation.navigate(SCREENS.GAME, { level: 1, stars: 0 })}
           />
           <WoodButton
-            label="Cómo jugar"
-            colors={['#C8884E', '#A0622A', '#7A4A1E']}
+             label="Cómo jugar"
+    colors={['#D89A58','#B56C2C','#8E4F1B']}
             onPress={() => navigation.navigate(SCREENS.HOW_TO_PLAY)}
           />
           <WoodButton
-            label="Créditos"
-            colors={['#C8884E', '#A0622A', '#7A4A1E']}
+               label="Créditos"
+    colors={['#D89A58','#B56C2C','#8E4F1B']}
             onPress={() => navigation.navigate(SCREENS.CREDITS)}
           />
           <WoodButton
-            label="Configuración"
-            colors={['#A0622A', '#7A4A1E', '#5C3514']}
+             label="Configuración"
+    colors={['#B97942','#8F5324','#6E3E17']}
             onPress={() => navigation.navigate(SCREENS.SETTINGS)}
           />
         </View>
@@ -158,56 +159,67 @@ const styles = StyleSheet.create({
     width: '88%',
     gap: 12,
   },
-  woodButtonTouchable: {
-    width: '100%',
-  },
-  woodButtonWrapper: {
-    width: '100%',
-    borderRadius: 18,
-  },
-  woodButtonShadowBottom: {
-    position: 'absolute',
-    bottom: -5,
-    left: 4,
-    right: 4,
-    height: '100%',
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    zIndex: -1,
-  },
-  woodButtonGradient: {
-    borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',        // texto centrado
-    justifyContent: 'center',
-  },
-  woodButtonGloss: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-  },
-  veta: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
+  buttonTouchable: {
+  width: '100%',
+},
+
+buttonOuter: {
+  borderRadius: 30,
+},
+
+buttonShadow: {
+  position: 'absolute',
+  top: 7,
+  left: 0,
+  right: 0,
+  bottom: -2,
+  borderRadius: 30,
+  backgroundColor: '#4b2d12',
+},
+
+button: {
+  borderRadius: 30,
+  paddingVertical: 18,
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderWidth: 3,
+  borderColor: '#F8E6B2',
+  overflow: 'hidden',
+},
+
+buttonLight: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: '45%',
+  backgroundColor: 'rgba(255,255,255,0.18)',
+},
+
+buttonText: {
+  color: '#fff',
+  fontWeight: 'bold',
+  fontSize: 26,
+  textShadowColor: '#5B2F00',
+  textShadowOffset: {
+    width: 2,
     height: 2,
-    backgroundColor: '#000',
   },
-  woodButtonText: {
-    color: '#FFF',
-    fontSize: FONT_SIZES.button,
-    fontWeight: '700',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
+  textShadowRadius: 3,
+},
+
+leafLeft: {
+  position: 'absolute',
+  left: 18,
+  top: 10,
+  fontSize: 22,
+},
+
+leafRight: {
+  position: 'absolute',
+  right: 18,
+  bottom: 8,
+  fontSize: 22,
+},
+
 });
