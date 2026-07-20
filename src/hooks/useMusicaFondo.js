@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import { MUSIC } from '../constantes/configuracionAudio';
 
@@ -22,6 +23,30 @@ export default function useMusicaFondo(volumen = 0.35) {
 
   useEffect(() => {
     let mounted = true;
+    let removerListeners = () => {};
+
+    // En web, los navegadores bloquean el autoplay de audio si el usuario
+    // no ha interactuado todavía con la página (ej. al recargar con F5 /
+    // el botón de recargar del navegador, no hay interacción previa).
+    // Si Audio.Sound falla al reproducir por esto, dejamos "armado" el
+    // audio para que arranque en el primer click/tap/tecla del usuario.
+    const armarReproduccionEnInteraccion = (sound) => {
+      if (Platform.OS !== 'web') return;
+
+      const intentarReproducir = () => {
+        sound.playAsync().catch(() => {});
+      };
+
+      window.addEventListener('pointerdown', intentarReproducir, { once: true });
+      window.addEventListener('keydown', intentarReproducir, { once: true });
+      window.addEventListener('touchstart', intentarReproducir, { once: true });
+
+      removerListeners = () => {
+        window.removeEventListener('pointerdown', intentarReproducir);
+        window.removeEventListener('keydown', intentarReproducir);
+        window.removeEventListener('touchstart', intentarReproducir);
+      };
+    };
 
     const configurarYReproducir = async () => {
       // Limpiamos cualquier instancia previa que haya quedado
@@ -42,12 +67,15 @@ export default function useMusicaFondo(volumen = 0.35) {
           shouldDuckAndroid: true,
         });
 
+        // Creamos el Sound SIN reproducir automáticamente, para poder
+        // capturar el error de autoplay por separado y no confundirlo
+        // con un error real de carga del archivo.
         const { sound } = await Audio.Sound.createAsync(
           MUSIC.background,
           {
             isLooping: true,
             volume: volumen,
-            shouldPlay: true,
+            shouldPlay: false,
           }
         );
 
@@ -58,6 +86,15 @@ export default function useMusicaFondo(volumen = 0.35) {
 
         soundRef.current = sound;
         intentosRef.current = 0; // reset intentos al éxito
+
+        try {
+          await sound.playAsync();
+        } catch (playError) {
+          // Bloqueado por la política de autoplay del navegador.
+          // Queda armado para reproducir en la primera interacción.
+          console.warn('Autoplay bloqueado, esperando interacción del usuario:', playError);
+          armarReproduccionEnInteraccion(sound);
+        }
       } catch (error) {
         console.warn(`Error música de fondo (intento ${intentosRef.current + 1}):`, error);
 
@@ -79,6 +116,7 @@ export default function useMusicaFondo(volumen = 0.35) {
     return () => {
       mounted = false;
       clearTimeout(timer);
+      removerListeners();
       // Limpieza al desmontar
       if (soundRef.current) {
         soundRef.current.stopAsync()
