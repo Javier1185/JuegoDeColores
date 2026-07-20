@@ -10,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import AppNavigator from './src/navegacion/AppNavigator';
 import FONTS_TO_LOAD from './src/constantes/fuentes';
+import useMusicaFondo from './src/hooks/useMusicaFondo';
 
 // Evita que el splash nativo se oculte automáticamente antes de tiempo,
 // le daremos control manual mientras cargamos fuentes y recursos.
@@ -17,6 +18,13 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+
+  // Música de fondo manejada a nivel raíz de la app (no por pantalla).
+  // Al vivir en App.js, que solo se monta una vez durante toda la sesión,
+  // el audio sobrevive a la navegación entre pantallas y evita el corte
+  // que ocurría con Expo Fast Refresh cuando el sonido vivía dentro de
+  // un componente de pantalla que se remontaba.
+  useMusicaFondo(0.35);
 
   useEffect(() => {
     const prepareApp = async () => {
