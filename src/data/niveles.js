@@ -26,17 +26,21 @@
 export const ANIMALS_BY_DIFFICULTY = {
   facil: [
     'vaca',     // azul  — color muy reconocible
-    'gallina',  // rojo  — color muy reconocible
+    'gallina',
+    'gato',
+    'delfin',  // rojo  — color muy reconocible
   ],
   medio: [
     'pato',     // amarillo — un poco más sutil
-    'rana',     // verde    — un poco más sutil
+    'rana', 
+    'orca',    // verde    — un poco más sutil
   ],
   dificil: [
     'cerdo',    // rosado   — color menos común
     'perro',    // gris     — color menos común
     'ardilla',  // marrón   — color más abstracto
-    'jirafa',   // amarillo — confusión posible con pato
+    'jirafa', 
+    'mariposa',  // amarillo — confusión posible con pato
   ],
 };
 
