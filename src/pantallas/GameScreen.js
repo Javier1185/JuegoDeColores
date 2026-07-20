@@ -26,7 +26,7 @@ import ScreenBackground from '../components/common/ScreenBackground';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_GAP = 16;
-const MAX_CARD_SIZE = 130;
+const MAX_CARD_SIZE = 150;
 
 // Máximo de respuestas incorrectas permitidas
 const MAX_INTENTOS_INCORRECTOS = 2;
@@ -439,21 +439,57 @@ export default function GameScreen({ route, navigation }) {
           </View>
 
           {/* Animales */}
-          <View style={styles.animalsGrid}>
-            {animalesDelNivel.map((animal) => (
-              <AnimalCard
-                key={animal.id}
-                animal={animal}
-                onPress={handleAnimalPress}
-                feedbackState={
-                  pressedId === animal.id
-                    ? feedback
-                    : null
-                }
-              />
-            ))}
+          <View style={styles.animalsGridWrapper}>
+            <View style={styles.animalsGrid}>
+              {animalesDelNivel.map((animal) => (
+                <AnimalCard
+                  key={animal.id}
+                  animal={animal}
+                  onPress={handleAnimalPress}
+                  feedbackState={
+                    pressedId === animal.id
+                      ? feedback
+                      : null
+                  }
+                />
+              ))}
+            </View>
           </View>
         </ScrollView>
+
+        {/* Mensaje de respuesta correcta */}
+        {feedback === 'correct' && (
+          <View
+            style={[
+              styles.feedbackBanner,
+              {
+                backgroundColor:
+                  PALETTE.success,
+              },
+            ]}
+          >
+            <Text style={styles.feedbackText}>
+              ¡Correcto! 🎉
+            </Text>
+          </View>
+        )}
+
+        {/* Mensaje de respuesta incorrecta */}
+        {feedback === 'wrong' && (
+          <View
+            style={[
+              styles.feedbackBanner,
+              {
+                backgroundColor:
+                  PALETTE.error,
+              },
+            ]}
+          >
+            <Text style={styles.feedbackText}>
+              ¡Intenta de nuevo! 💪
+            </Text>
+          </View>
+        )}
       </View>
     </ScreenBackground>
   );
@@ -534,8 +570,15 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 16,
     paddingBottom: 40,
+  },
+
+  animalsGridWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: 60,
   },
 
   promptBanner: {
@@ -545,6 +588,7 @@ const styles = StyleSheet.create({
       'rgba(255,255,255,0.92)',
     borderRadius: 20,
     padding: 16,
+    marginTop: 16,
     marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: {
