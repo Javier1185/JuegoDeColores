@@ -5,7 +5,6 @@
  *
  * NOTA: versión funcional básica para probar la navegación. Puedes
  * personalizar el contenido (nombres, agradecimientos, versión) según
- * lo necesites para la publicación en Play Store.
  * -----------------------------------------------------------------------
  */
 
@@ -20,6 +19,10 @@ export default function CreditsScreen({ navigation }) {
       <Text style={styles.title}>Créditos</Text>
       <Text style={styles.text}>La Granja de los Colores</Text>
       <Text style={styles.text}>Un juego educativo para aprender los colores</Text>
+      <Text style={styles.text}>Desarrollado por:</Text>
+       <Text style={styles.text}>Javier Forchiney</Text>
+        <Text style={styles.text}>Pablo Pimentel</Text>
+        <Text style={styles.text}>Mayker Saucedo</Text>
       <Text style={styles.text}>Versión 1.0.0</Text>
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
