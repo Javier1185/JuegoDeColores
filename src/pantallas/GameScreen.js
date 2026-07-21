@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 
 import { Audio } from 'expo-av';
+import { Ionicons } from '@expo/vector-icons';
 
 import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
@@ -38,6 +39,50 @@ const { width: SCREEN_WIDTH } =
   Dimensions.get('window');
 
 const GRID_GAP = 16;
+
+/**
+ * Palabra del color con un contorno oscuro alrededor de las letras.
+ * Así se lee bien sin importar el color (incluso blanco) y sin
+ * necesidad de una caja de fondo que se vea rara con palabras largas.
+ */
+function PalabraColor({ texto, colorHex }) {
+  const contorno = 'rgba(61, 43, 31, 0.45)';
+  const desplazamientos = [
+    [-1, -1], [1, -1],
+    [-1, 1], [1, 1],
+    [0, -1.2], [0, 1.2],
+    [-1.2, 0], [1.2, 0],
+  ];
+
+  return (
+    <View style={styles.colorWordWrapper}>
+      {desplazamientos.map(([dx, dy], i) => (
+        <Text
+          key={i}
+          style={[
+            styles.colorWordText,
+            {
+              position: 'absolute',
+              left: dx,
+              top: dy,
+              color: contorno,
+            },
+          ]}
+        >
+          {texto}
+        </Text>
+      ))}
+      <Text
+        style={[
+          styles.colorWordText,
+          { color: colorHex },
+        ]}
+      >
+        {texto}
+      </Text>
+    </View>
+  );
+}
 const MAX_CARD_SIZE = 150;
 
 // Máximo de respuestas incorrectas permitidas
@@ -539,9 +584,11 @@ export default function GameScreen({
             }
             style={styles.iconButton}
           >
-            <Text style={styles.headerIcon}>
-              🏠
-            </Text>
+            <Ionicons
+              name="home"
+              size={24}
+              color={PALETTE.woodBrownDark}
+            />
           </AnimatedButton>
 
           <Text style={styles.levelText}>
@@ -567,22 +614,23 @@ export default function GameScreen({
               onPress={handleReplayAudio}
               style={styles.speakerButton}
             >
-              <Text style={styles.speakerIcon}>
-                🔊
-              </Text>
+              <Ionicons
+                name="volume-high"
+                size={22}
+                color="#FFFFFF"
+              />
             </AnimatedButton>
 
-            <Text style={styles.promptText}>
-              Toca el animal{' '}
-              <Text
-                style={{
-                  color:
-                    colorObjetivo.hex,
-                }}
-              >
-                {colorObjetivo.label}
+            <View style={styles.promptTextRow}>
+              <Text style={styles.promptText}>
+                Toca el animal
               </Text>
-            </Text>
+
+              <PalabraColor
+                texto={colorObjetivo.label}
+                colorHex={colorObjetivo.hex}
+              />
+            </View>
           </View>
 
           {/* Animales */}
@@ -661,10 +709,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
-  },
-
-  headerIcon: {
-    fontSize: 24,
   },
 
   levelText: {
@@ -758,15 +802,28 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  speakerIcon: {
-    fontSize: 20,
+  promptTextRow: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: 8,
+    rowGap: 6,
   },
 
   promptText: {
     fontSize: FONT_SIZES.subtitle,
     fontWeight: '700',
     color: PALETTE.textDark,
-    flex: 1,
+  },
+
+  colorWordWrapper: {
+    position: 'relative',
+  },
+
+  colorWordText: {
+    fontSize: FONT_SIZES.subtitle,
+    fontWeight: '800',
   },
 
   animalsGrid: {

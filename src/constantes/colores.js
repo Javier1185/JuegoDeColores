@@ -68,7 +68,7 @@ export const COLORS_LIST = [
 },
 {
   id: 'negro',
-  label: 'NEGRA',
+  label: 'NEGRO',
   hex: '#000000',
   audio: require('../../assets/audio/colors/negro.mp3'),
 },

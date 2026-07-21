@@ -2,7 +2,7 @@
  * HomeScreen.js
  */
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Image,
   Animated,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -20,6 +21,37 @@ import { reproducirSonidoBoton } from '../utils/sonidoBoton';
 
 function WoodButton({ label, onPress, colors }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  const esBotonJugar = label === 'Jugar';
+
+  // Latido suave y continuo, solo para el botón "Jugar",
+  // para invitar al niño a presionarlo.
+  useEffect(() => {
+    if (!esBotonJugar) return;
+
+    const latido = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.06,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.delay(600),
+      ])
+    );
+
+    latido.start();
+
+    return () => latido.stop();
+  }, [esBotonJugar]);
 
   const getIcon = () => {
     switch (label) {
@@ -68,7 +100,10 @@ function WoodButton({ label, onPress, colors }) {
         style={[
           styles.buttonOuter,
           {
-            transform: [{ scale: scaleAnim }],
+            transform: [
+              { scale: scaleAnim },
+              { scale: pulseAnim },
+            ],
           },
         ]}
       >
