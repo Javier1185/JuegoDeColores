@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
@@ -141,6 +142,7 @@ function WoodButton({ label, onPress, colors }) {
 
 export default function HomeScreen({ navigation }) {
   const [totalEstrellas, setTotalEstrellas] = useState(0);
+  const insets = useSafeAreaInsets();
 
   /*
    * Recarga el total de estrellas guardadas cada vez que
@@ -172,7 +174,12 @@ export default function HomeScreen({ navigation }) {
           resizeMode="contain"
         />
 
-        <View style={styles.starsTotalContainer}>
+        <View
+          style={[
+            styles.starsTotalContainer,
+            { top: insets.top + 12 },
+          ]}
+        >
           <Text style={styles.starsTotalText}>
             ⭐ {totalEstrellas}
           </Text>
@@ -225,13 +232,12 @@ const styles = StyleSheet.create({
   },
   starsTotalContainer: {
     position: 'absolute',
-    top: '5%',
-    alignSelf: 'center',
+    right: 16,
+    alignSelf: 'flex-end',
     backgroundColor: 'rgba(255,255,255,0.85)',
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
-    marginTop: 290,
 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
