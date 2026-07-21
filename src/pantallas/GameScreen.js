@@ -34,6 +34,7 @@ import {
 } from '../data/niveles';
 
 import ScreenBackground from '../components/common/ScreenBackground';
+import { incrementarEstrellasTotales } from '../utils/almacenamiento';
 
 const { width: SCREEN_WIDTH } =
   Dimensions.get('window');
@@ -453,6 +454,14 @@ export default function GameScreen({
        * El audio aleatorio se reproduce en
        * LevelCompleteScreen.
        */
+
+      /*
+       * Suma 1 estrella al total acumulado de forma
+       * persistente. El total nunca baja ni tiene tope:
+       * crece cada vez que el jugador acierta, en
+       * cualquier nivel.
+       */
+      incrementarEstrellasTotales(1);
 
       const nuevosColoresUsados = [
         ...coloresUsados,

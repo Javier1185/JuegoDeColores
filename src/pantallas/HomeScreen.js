@@ -2,7 +2,7 @@
  * HomeScreen.js
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,13 @@ import {
   Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { SCREENS } from '../navegacion/AppNavigator';
 import { PALETTE, FONT_SIZES } from '../styles/tema';
 import ScreenBackground from '../components/common/ScreenBackground';
 import { reproducirSonidoBoton } from '../utils/sonidoBoton';
+import { obtenerEstrellasTotales } from '../utils/almacenamiento';
 
 function WoodButton({ label, onPress, colors }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -138,6 +140,27 @@ function WoodButton({ label, onPress, colors }) {
 }
 
 export default function HomeScreen({ navigation }) {
+  const [totalEstrellas, setTotalEstrellas] = useState(0);
+
+  /*
+   * Recarga el total de estrellas guardadas cada vez que
+   * el jugador vuelve a esta pantalla (por ejemplo, después
+   * de terminar un nivel), no solo al montar el componente.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      let activo = true;
+
+      obtenerEstrellasTotales().then((total) => {
+        if (activo) setTotalEstrellas(total);
+      });
+
+      return () => {
+        activo = false;
+      };
+    }, [])
+  );
+
   return (
     <ScreenBackground
       source={require('../../assets/images/backgrounds/home-background.jpeg')}
@@ -148,6 +171,12 @@ export default function HomeScreen({ navigation }) {
           style={styles.logo}
           resizeMode="contain"
         />
+
+        <View style={styles.starsTotalContainer}>
+          <Text style={styles.starsTotalText}>
+            ⭐ {totalEstrellas}
+          </Text>
+        </View>
 
         <View style={styles.buttonsContainer}>
           <WoodButton
@@ -193,6 +222,27 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     width: '88%',
     gap: 12,
+  },
+  starsTotalContainer: {
+    position: 'absolute',
+    top: '5%',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginTop: 290,
+
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  starsTotalText: {
+    fontSize: FONT_SIZES.subtitle,
+    fontWeight: '700',
+    color: PALETTE.woodBrownDark,
   },
   buttonTouchable: {
   width: '100%',
